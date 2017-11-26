@@ -25,7 +25,7 @@
 // protótipo das funções
 void carregaParametros(int*, char**, short int*, int*);
 void limpaBuffer(char*);
-void timeoutHandler(int signo);
+void timeoutHandler(int);
 void estadoStandBy(int*);
 void estadoAguardaAck(int*);
 void estadoEnvia(int*);

@@ -13,7 +13,7 @@ transacao* criaTransacaoVazia(){
     t->codErro = SEM_ERRO;
 
     t->mensagemErro = malloc(TAM_MSG_ERRO * sizeof(char));
-    // t->bufferArquivo = malloc(TAM_CARGA_PACOTE * sizeof(char));
+    t->nomeArquivo = malloc(TAM_NOME_ARQUIVO * sizeof(char));
     t->arquivo = malloc(TAM_CARGA_PACOTE * sizeof(char));
 
     return t;

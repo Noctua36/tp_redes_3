@@ -10,6 +10,7 @@ typedef struct transacao {
     int timedout;
     int terminada;
     int arquivoAberto;
+    char* nomeArquivo;
     FILE* arquivo;
     int posicaoArquivo;
     // char* bufferArquivo;
