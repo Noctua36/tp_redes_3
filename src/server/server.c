@@ -104,14 +104,22 @@ void estadoStandBy(int *operacao){
   limpaBuffer(buf);
   bytesRecebidos = tp_recvfrom(sockServFd, buf, mtu, &cli_addr);                     
         
+  #ifdef DEBUG
+    printf("bytesRecebidos: %d\n", bytesRecebidos);
+  #endif
+
   if (bytesRecebidos == -1){
     perror("ERRO-> Nao foi possivel ler comando do socket: %s]\n");
     *operacao = OPERACAO_NOK;
   }
 
   montaPacotePeloBuffer(recebido, buf);
+  #ifdef DEBUG
+    printf("pacote recebido:\n");
+    imprimePacote(recebido);
+  #endif
   if (recebido->opcode == REQ)
-    *operacao = OPERACAO_OK;
+    *operacao = OPERACAO_REQ_RECEBIDA;
   else 
     *operacao = OPERACAO_NOK;
 }

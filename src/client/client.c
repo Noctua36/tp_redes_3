@@ -53,7 +53,7 @@ int main(int argc, char* argv[]){
   int tamBuffer;
   // long int bytesRecebidos = 0;
   char nomeArquivo[TAM_NOME_ARQUIVO];
-  
+  mtu = tp_mtu();
   // double comeco, duracao;
 
   // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
@@ -119,7 +119,7 @@ void estadoEnviaReq(int *operacao){
   socket = tp_socket(0);
   
   #ifdef DEBUG
-    printf("\n[DEBUG] socket: %d\n", socket);
+    printf("\n[DEBUG] socket: %d, mtu: %d\n", socket, mtu);
     imprimeBuffer(buf);
   #endif
 
