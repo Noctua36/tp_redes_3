@@ -11,9 +11,9 @@
 #include <signal.h>
 #include "tp_socket.h"
 #include "fsmServidor.h"
-#include "arquivo.h"
-#include "pacote.h"
-#include "transacao.h"
+#include "../commom/arquivo.h"
+#include "../commom/pacote.h"
+#include "../commom/transacao.h"
 // #include <sys/socket.h>
 // #include <netdb.h>
 // #include <netinet/in.h>

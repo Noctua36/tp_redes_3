@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "pacote.h"
+#include "../commom/pacote.h"
 #include <string.h>
 #include <netinet/in.h>
 

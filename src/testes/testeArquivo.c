@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "arquivo.h"
+#include "../commom/arquivo.h"
 #include <string.h>
 
 #define TAM_MAX 32
