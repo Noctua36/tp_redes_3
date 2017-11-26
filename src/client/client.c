@@ -20,6 +20,14 @@
 
 #define DEBUG
 
+// #ifdef DEBUG
+// #define DEBUG_TEST 1
+// #else
+// #define DEBUG_TEST 0
+// #endif
+// #define debug_print(fmt, ...) \
+//   do { if (DEBUG_TEST) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+
 #define TAM_PORTA 6
 #define TAM_NOME_ARQUIVO 32
 #define TAM_HOST 16
@@ -51,8 +59,6 @@ int main(int argc, char* argv[]){
   // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
   carregaParametros(&argc, argv, host, &porta, nomeArquivo, &tamBuffer);
 
-
-  
   // aloca memória para buffer
   buf = malloc(sizeof *buf * tamBuffer);
   if (buf == NULL){
@@ -66,7 +72,7 @@ int main(int argc, char* argv[]){
   tp_init();
 
   // cria socket e armazena o respectivo file descriptor
-  sockCliFd = tp_socket(0);
+  // sockCliFd = tp_socket(porta);
 
   int estadoAtual = ESTADO_ENVIA_REQ;
   int operacao; 
@@ -100,6 +106,9 @@ int main(int argc, char* argv[]){
 }
 
 void estadoEnviaReq(int *operacao){
+  #ifdef DEBUG
+    printf("\n[FSM] ENVIA_REQ\n");
+  #endif
   int socket, status;
   // TODO: verificar possibilidade de criar pacote 'envio', enviar e excluí-lo aqui dentro desta função
   envio->opcode = REQ;
@@ -107,7 +116,12 @@ void estadoEnviaReq(int *operacao){
   montaBufferPeloPacote(buf, envio);
 
   // cria socket
-  socket = tp_socket(porta);
+  socket = tp_socket(0);
+  
+  #ifdef DEBUG
+    printf("\n[DEBUG] socket: %d\n", socket);
+    imprimeBuffer(buf);
+  #endif
 
   // forma endereço para envio do pacote ao servidor
   if (tp_build_addr(saddr, host, porta) < 0){
@@ -116,29 +130,43 @@ void estadoEnviaReq(int *operacao){
   }
 
   status = tp_sendto(socket, buf, mtu, saddr);
+
+  #ifdef DEBUG
+    printf("\n[DEBUG] status: %d\n", status);
+  #endif
   // verifica estado do envio
-    if (status > 0) {
-      *operacao = OPERACAO_OK;
-    } else {
-      *operacao = OPERACAO_NOK;
-    }
-    destroiPacote(envio);
+  if (status > 0) {
+    *operacao = OPERACAO_OK;
+  } else {
+    *operacao = OPERACAO_NOK;
+  }
+  destroiPacote(envio);
 }
 
 void estadoRecebeArq(int *operacao){
-
+  #ifdef DEBUG
+    printf("\n[FSM] RECEBE_ARQ\n");
+  #endif
 }
 
 void estadoErro(int *operacao){
-
+  #ifdef DEBUG
+    printf("\n[FSM] ERRO\n");
+  #endif
 }
 
 void estadoEnviaAck(int *operacao){
-
+  #ifdef DEBUG
+    printf("\n[FSM] ENVIA_ACK\n");
+  #endif
 }
 
 void estadoTermino(int *operacao){
-
+  #ifdef DEBUG  
+    printf("\n[FSM] TERMINO\n");
+  #endif
+  printf("Saindo...\n");
+  exit(EXIT_SUCCESS);
 }
 
 // UTIL
