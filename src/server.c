@@ -8,18 +8,24 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <arpa/inet.h> //INET_NTOP
+#include <signal.h>
 #include "tp_socket.h"
 #include "fsmServidor.h"
 #include "arquivo.h"
 #include "pacote.h"
+#include "transacao.h"
 // #include <sys/socket.h>
 // #include <netdb.h>
 // #include <netinet/in.h>
 
 #define DEBUG
 
+#define TIMEOUT 5
+
 // protótipo das funções
-void carregaParametros(int*, char**, short int*, long int*);
+void carregaParametros(int*, char**, short int*, int*);
+void limpaBuffer(char*);
+void timeoutHandler(int signo);
 void estadoStandBy(int*);
 void estadoAguardaAck(int*);
 void estadoEnvia(int*);
@@ -29,24 +35,31 @@ void estadoErro(int*);
 // int pacoteRecebeAck();
 // int pacoteRecebeInvalido();
 
-int sockServFd, sockCliFd;
-struct sockaddr_in local_addr;
+int sockServFd, sockCliFd, mtu;
+short int porta;
+struct sockaddr_in cli_addr;
 char* buf;
+pacote *recebido;
+transacao *t;
+struct timeval timeout;      
 
 int main(int argc, char* argv[]){
   
-  short int porta;
+  mtu = tp_mtu();
 
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
-  carregaParametros(&argc, argv, &porta, &tamBuffer);
+  carregaParametros(&argc, argv, &porta, &mtu);
   
   // aloca memória para buffer
-  buffer = malloc(sizeof *buf * tamBuffer);
-  if (buffer == NULL){
+  buf = malloc(sizeof *buf * mtu);
+  if (buf == NULL){
     perror("Falha ao alocar memoria para buffer.");
     exit(EXIT_FAILURE);
   }
  
+  timeout.tv_sec = 10;
+  timeout.tv_usec = 0;
+
   // chamada de função de inicialização para ambiente de testes
   tp_init();
  
@@ -56,6 +69,8 @@ int main(int argc, char* argv[]){
   int estadoAtual = ESTADO_STANDBY;
   int operacao;   
 
+  recebido = criaPacoteVazio();
+  t = criaTransacaoVazia();
   while(1){
     switch(estadoAtual){
       case ESTADO_STANDBY:
@@ -81,37 +96,111 @@ int main(int argc, char* argv[]){
 }
 
 void estadoStandBy(int *operacao){
-  // int bytesRecebidos = 0;
-  // #ifdef DEBUG
-  //   printf("\n\nServidor iniciado\n");
-  // #endif
-
-  // bytesRecebidos = tp_recvfrom(sockServFd, pacote.buffer, tamBuffer, &local_addr);                     
+  #ifdef DEBUG
+    printf("\n[FSM] STAND_BY\n");
+  #endif
+  int bytesRecebidos = 0;
+ 
+  limpaBuffer(buf);
+  bytesRecebidos = tp_recvfrom(sockServFd, buf, mtu, &cli_addr);                     
         
-  // if (bytesRecebidos == -1){
-  //   perror("ERRO-> Nao foi possivel ler comando do socket: %s]\n");
-  //   *operacao = OPERACAO_NOK;
-  // }
-  // *operacao = OPERACAO_OK;
+  if (bytesRecebidos == -1){
+    perror("ERRO-> Nao foi possivel ler comando do socket: %s]\n");
+    *operacao = OPERACAO_NOK;
+  }
+
+  montaPacotePeloBuffer(recebido, buf);
+  if (recebido->opcode == REQ)
+    *operacao = OPERACAO_OK;
+  else 
+    *operacao = OPERACAO_NOK;
 }
 
 void estadoEnvia(int *operacao){
+  #ifdef DEBUG
+    printf("\n[FSM] ENVIA\n");
+  #endif
+
+  int socket, status;
+  pacote *envio;
+  // verifica se arquivo já está aberto
+  if (!t->arquivoAberto){
+    t->arquivo = abreArquivoParaLeitura(recebido->nomeArquivo);
+    // TODO: verificar se arquivo existe e tratar erro
+    t->arquivoAberto = 1;
+  } 
+  else {
+    // cria pacote para envio
+    envio = criaPacoteVazio();
+    envio->opcode = DADOS;
+    envio->numBloco = t->numBloco++;
+    leBytesDeArquivo(envio->dados, t->arquivo, mtu); // TODO: descontar do mtu bytes utilizados pelo cabeçalho
+    montaBufferPeloPacote(buf, envio);
+
+    // cria socket
+    socket = tp_socket(porta);
+    status = tp_sendto(socket, buf, mtu, &cli_addr);
+
+    // verifica estado do envio
+    if (status > 0) {
+      *operacao = OPERACAO_OK;
+    } else {
+      *operacao = OPERACAO_NOK;
+    }
+    destroiPacote(envio);
+  }
+
 
 }
 
 void estadoAguardaAck(int *operacao){
+  #ifdef DEBUG
+    printf("\n[FSM] AGUARDA_ACK\n");
+  #endif
 
+  int bytesRecebidos = 0;
+  
+  limpaBuffer(buf);
+  // inicia temporizador de timeout
+  // signal(SIGALRM, timeoutHandler);
+  // alarm(TIMEOUT);
+  if (setsockopt (sockServFd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0){
+    perror("falha ao definir timeout para socket.\n");
+    // TODO: tratar erro
+  }
+  bytesRecebidos = tp_recvfrom(sockServFd, buf, mtu, &cli_addr);                     
+  // cancela timeout
+  // alarm(0);        
+  if (bytesRecebidos == -1){
+    perror("ERRO-> Nao foi possivel ler comando do socket: %s]\n");
+    *operacao = OPERACAO_NOK;
+  }
+
+  montaPacotePeloBuffer(recebido, buf);
+  if (recebido->opcode == ACK){
+    // TODO: extrair e avaliar sobre qual numBloco tal ACK é referente
+    *operacao = OPERACAO_OK;
+  }
+  else 
+    *operacao = OPERACAO_NOK;
 }
 
 void estadoReseta(int *operacao){
-
+  #ifdef DEBUG
+    printf("\n[FSM] RESETA\n");
+  #endif
 }
 
-void estadoReseta(int *operacao){
-
+void estadoErro(int *operacao){
+  #ifdef DEBUG
+    printf("\n[FSM] ERRO\n");
+  #endif
 }
 
-
+void timeoutHandler(int signo){
+  t->timeoutCount++;
+  t->timedout = 1;
+}
 
 // int pacotePedidoArquivo(){
 //   int existe = verificaSeArquivoExiste(pacote.nomeArquivo);
@@ -127,7 +216,7 @@ void estadoReseta(int *operacao){
 // int pacoteRecebeInvalido(){return 0;}
 
 // UTIL
-void carregaParametros(int* argc, char** argv, short int* porta, long int* tamBuffer){
+void carregaParametros(int* argc, char** argv, short int* porta, int* tamBuffer){
   char *ultimoCaractere;
   // verifica se programa foi chamado com argumentos corretos
   if (*argc != 3){
@@ -144,6 +233,10 @@ void carregaParametros(int* argc, char** argv, short int* porta, long int* tamBu
     *porta = atoi(argv[1]);
   }
   #ifdef DEBUG
-    printf("[DEBUG] Parametros recebidos-> porta: %d tamBuffer: %ld\n", *porta, *tamBuffer);
+    printf("[DEBUG] Parametros recebidos-> porta: %d tamBuffer: %d\n", *porta, *tamBuffer);
   #endif
+}
+
+void limpaBuffer(char *b){
+  memset(b, 0, mtu);
 }

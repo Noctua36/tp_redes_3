@@ -9,11 +9,9 @@ void transita(int *estado, int *operacao){
         case OPERACAO_REQ_RECEBIDA:
           *estado = ESTADO_ENVIA;
           break;
-        }
         case OPERACAO_ABANDONA:
           *estado = ESTADO_RESETA;
           break;
-        }
         default:
           *estado = ESTADO_ERRO;
       }
@@ -44,9 +42,6 @@ void transita(int *estado, int *operacao){
         case OPERACAO_OK:
           *estado = ESTADO_AGUARDA_ACK;
           break;
-        case OPERACAO_TERMINO:
-          *estado = ESTADO_RESETA;
-          break;
       }
     break;
 
@@ -56,7 +51,7 @@ void transita(int *estado, int *operacao){
           *estado = ESTADO_ENVIA;
           break;
         case OPERACAO_NOK:
-          *estado = ESTADO_ERRO;
+          *estado = ESTADO_AGUARDA_ACK;
           break;
         case OPERACAO_ABANDONA:
           *estado = ESTADO_RESETA;
