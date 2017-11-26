@@ -1,0 +1,53 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "client",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceRoot}/src/client/client",
+        "args": [
+          "127.0.0.1",
+          "2000",
+          "teste.txt",
+          "256"
+        ],
+        "stopAtEntry": false,
+        "cwd": "${workspaceRoot}/src/client",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+          {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ],
+        "preLaunchTask": "build client"
+      },
+      {
+        "name": "server",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceRoot}/src/server/server",
+        "args": [
+          "5050",
+          "256"
+        ],
+        "stopAtEntry": false,
+        "cwd": "${workspaceRoot}/src/server",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+          {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ],
+        "preLaunchTask": "build server"
+      }
+    ]
+  }
