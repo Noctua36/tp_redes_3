@@ -115,8 +115,6 @@ void estadoStandBy(int *operacao){
 
   montaPacotePeloBuffer(recebido, buf);
   #ifdef DEBUG
-    printf("buffer recebido:\n");
-    imprimeBuffer(buf);
     printf("pacote recebido:\n");
     imprimePacote(recebido);
   #endif
@@ -147,9 +145,14 @@ void estadoEnvia(int *operacao){
   envio = criaPacoteVazio();
   envio->opcode = (uint8_t)DADOS;
   envio->numBloco = t->numBloco++;
-  leBytesDeArquivo(envio->dados, t->arquivo, mtu); // TODO: descontar do mtu bytes utilizados pelo cabeçalho
+  int cargaUtil = mtu - sizeof(envio->opcode) - sizeof(envio->numBloco);
+  leBytesDeArquivo(envio->dados, t->arquivo, cargaUtil);
   montaBufferPeloPacote(buf, envio);
 
+  #ifdef DEBUG
+    printf("Pacote a ser enviado: \n");
+    imprimePacote(envio);
+  #endif
   // cria socket
   socket = tp_socket(porta);
   status = tp_sendto(socket, buf, mtu, &cli_addr);
@@ -162,8 +165,6 @@ void estadoEnvia(int *operacao){
   }
   destroiPacote(envio);
   
-
-
 }
 
 void estadoAguardaAck(int *operacao){
