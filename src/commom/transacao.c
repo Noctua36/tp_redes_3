@@ -14,7 +14,11 @@ transacao* criaTransacaoVazia(){
 
     t->mensagemErro = malloc(TAM_MSG_ERRO * sizeof(char));
     t->nomeArquivo = malloc(TAM_NOME_ARQUIVO * sizeof(char));
-    t->arquivo = malloc(TAM_CARGA_PACOTE * sizeof(char));
+
+    if (t == NULL || t->nomeArquivo == NULL || t->mensagemErro == NULL) {
+        perror("Falha ao alocar memoria para transacao.");
+        exit(EXIT_FAILURE);
+    }
 
     return t;
 }

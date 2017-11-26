@@ -9,9 +9,10 @@
 
 // aloca memória e retorna ponteiro para pacote criado
 pacote* criaPacoteVazio(){
+    int cargaUtil = mtu - sizeof(opCode) - sizeof(unsigned short);
     pacote *p = malloc(sizeof *p);
     p->nomeArquivo = malloc(TAM_NOME_ARQUIVO * sizeof(char));
-    p->dados = malloc(TAM_CARGA_PACOTE * sizeof(char));
+    p->dados = malloc(cargaUtil * sizeof(char));
     p->mensagemErro = malloc(TAM_MSG_ERRO * sizeof(char));
 
     if (p == NULL || p->nomeArquivo == NULL || p->dados == NULL || p->mensagemErro == NULL) {
@@ -33,11 +34,12 @@ void destroiPacote(pacote *p){
 
 // inicializa pacote
 void limpaPacote(pacote *p){
+    int cargaUtil = mtu - sizeof(opCode) - sizeof(unsigned short);
     p->opcode = INVALIDO;
     p->codErro = SEM_ERRO;
     memset(p->mensagemErro, 0, TAM_MSG_ERRO);
     memset(p->nomeArquivo, 0, TAM_NOME_ARQUIVO);
-    memset(p->dados, 0, TAM_CARGA_PACOTE);
+    memset(p->dados, 0, cargaUtil);
     p-> numBloco = 0;
 }
 
@@ -47,11 +49,7 @@ void montaPacotePeloBuffer(pacote *p, char *b){
     carregaOpCode(p, b);
 
     // inicializa pacote
-    p->codErro = SEM_ERRO;
-    memset(p->mensagemErro, 0, TAM_MSG_ERRO);
-    memset(p->nomeArquivo, 0, TAM_NOME_ARQUIVO);
-    memset(p->dados, 0, TAM_CARGA_PACOTE);
-    p-> numBloco = 0;
+    limpaPacote(p);
 
     p->opcode = ntohs(p->opcode);
     // monta pacote de acordo com seu tipo
@@ -79,9 +77,9 @@ void montaPacotePeloBuffer(pacote *p, char *b){
 // cria buffer de pacote a partir dos dados da estrutura do pacote
 void montaBufferPeloPacote(char *b, pacote *p){
     unsigned short posicao = 0;
-
+    int cargaUtil = mtu - sizeof(opCode) - sizeof(unsigned short);
     // inicializa buffer
-    memset(b, 0, TAM_PACOTE);
+    memset(b, 0, mtu);
 
     memcpy(b, &p->opcode, sizeof p->opcode);
     posicao += sizeof p->opcode;
@@ -98,7 +96,7 @@ void montaBufferPeloPacote(char *b, pacote *p){
             p->numBloco = ntohs(p->numBloco);
             memcpy(b + posicao, &p->numBloco, sizeof p->numBloco);
             posicao += sizeof p->numBloco;
-            memcpy(b + posicao, &p->dados, TAM_CARGA_PACOTE);
+            memcpy(b + posicao, &p->dados, cargaUtil);
             break;
         case ERRO:
             p->codErro = ntohs(p->codErro);
@@ -112,37 +110,38 @@ void montaBufferPeloPacote(char *b, pacote *p){
     p->opcode = htons(p->opcode);
 }
 
-// extrai opcode do buffer e carreda no pacote
+// extrai opcode do buffer e carrega no pacote
 void carregaOpCode(pacote *p, char *b){
     // opCode é sempre o primeiro byte
     memcpy(&p->opcode, b, sizeof p->opcode);
     p->opcode = ntohs(p->opcode);
 }
 
-// extrai nome do arquivo do buffer e carreda no pacote
+// extrai nome do arquivo do buffer e carrega no pacote
 void carregaNomeDoArquivo(pacote *p, char *b){
     strcpy(p->nomeArquivo, b + sizeof p->opcode);
 }
 
-// extrai numero do bloco do buffer e carreda no pacote
+// extrai numero do bloco do buffer e carrega no pacote
 void carregaNumeroDoBloco(pacote *p, char *b){
     memcpy(&p->numBloco, b + sizeof p->opcode, sizeof p->numBloco);
     p->numBloco = ntohs(p->numBloco);
 }
 
-// extrai dados do buffer e carreda no pacote
+// extrai dados do buffer e carrega no pacote
 void carregaDados(pacote *p, char *b){
-    memcpy(&p->dados, b + sizeof p->opcode + sizeof p->numBloco, TAM_CARGA_PACOTE);
+    int cargaUtil = mtu - sizeof(opCode) - sizeof(unsigned short);
+    memcpy(&p->dados, b + sizeof p->opcode + sizeof p->numBloco, cargaUtil);
     p->numBloco = ntohs(p->numBloco);
 }
 
-// extrai código de erro do buffer e carreda no pacote
+// extrai código de erro do buffer e carrega no pacote
 void carregaCodigoErro(pacote *p, char *b){
     memcpy(&p->codErro, b + sizeof p->opcode, sizeof p->codErro);
     p->codErro = ntohs(p->codErro);
 }
 
-// extrai mensagem de erro do buffer e carreda no pacote
+// extrai mensagem de erro do buffer e carrega no pacote
 void carregaMensagemErro(pacote *p, char *b){
     strcpy(p->mensagemErro, b + sizeof p->opcode + sizeof p->codErro);
 }
@@ -151,7 +150,7 @@ void carregaMensagemErro(pacote *p, char *b){
 void imprimeBuffer(char *b){
     int i;
     printf("BUFFER>\n");
-    for (i = 0; i < TAM_PACOTE;i++){
+    for (i = 0; i < mtu;i++){
         printf("[%d]", b[i]);
     }
     printf("\n");

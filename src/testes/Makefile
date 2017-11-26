@@ -3,17 +3,16 @@ INC_DIR = ../commom/
 CFLAGS = -Wall -I$(INC_DIR)
 
 DEPS = arquivo.h pacote.h
-OBJ = $(addprefix $(INC_DIR), arquivo.o pacote.o)
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 all: testePacote testeArquivo
 
-testePacote: testePacote.o $(OBJ) 
+testePacote: testePacote.o $(addprefix $(INC_DIR), pacote.o)
 	gcc -o $@ $^ $(CFLAGS)
 
-testeArquivo: testeArquivo.o $(OBJ) 
+testeArquivo: testeArquivo.o $(addprefix $(INC_DIR), arquivo.o)
 	gcc -o $@ $^ $(CFLAGS)
 
 clean: 

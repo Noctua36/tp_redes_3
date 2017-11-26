@@ -25,7 +25,7 @@
 // #else
 // #define DEBUG_TEST 0
 // #endif
-// #define debug_print(fmt, ...) \
+// #define debug_print(fmt, ...) 
 //   do { if (DEBUG_TEST) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
 
 #define TAM_PORTA 6
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]){
   int estadoAtual = ESTADO_ENVIA_REQ;
   int operacao; 
 
-  envio = criaPacoteVazio();
+  envio = criaPacoteVazio(mtu);
   t = criaTransacaoVazia();
   strcpy(t->nomeArquivo, nomeArquivo);
   while(1){

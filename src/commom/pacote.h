@@ -1,8 +1,8 @@
 #ifndef _PACOTE_H_ 
 #define _PACOTE_H_ 
 
-#define TAM_CARGA_PACOTE 512
-#define TAM_PACOTE 515
+// #define TAM_CARGA_PACOTE 512
+// #define TAM_PACOTE 515
 #define TAM_NOME_ARQUIVO 32
 #define TAM_MSG_ERRO 32
 
@@ -55,6 +55,9 @@ typedef enum codigoErro { SEM_ERRO, COD_ERRO_DESCONHECIDO, COD_ERRO_ARQUIVO_NAO_
 #define MSG_ERRO_ARQUIVO_NAO_EXISTE "Arquivo não encontrado."
 #define MSG_ERRO_VIOLACAO_ACESSO "Violação de acesso." 
 #define MSG_ERRO_OP_ILEGAL "Operação ilegal."
+
+// mtu deve ser definido no programa principal
+extern int mtu;
 
 // estrutura para armazenar dados do pacote
 typedef struct pacote {

@@ -4,12 +4,14 @@
 #include <string.h>
 #include <netinet/in.h>
 
+int mtu = 1024;
+
 int main(){
     pacote *p, *p2;
     p = criaPacoteVazio();
     p2 = criaPacoteVazio();
     char *b;
-    b = malloc(TAM_PACOTE * sizeof (char));
+    b = malloc(mtu * sizeof (char));
     
     // teste pacote REQ
     printf("\nTeste REQ\n");
@@ -41,7 +43,8 @@ int main(){
     printf("\nTeste DADOS\n");
     limpaPacote(p);
     p->opcode = DADOS;
-    for (int i = 0; i < TAM_CARGA_PACOTE; i++){
+    int cargaUtil = mtu - sizeof(opCode) - sizeof(unsigned short);
+    for (int i = 0; i < cargaUtil; i++){
         p->dados[i] = 'a';
     }
     p->numBloco = 9;

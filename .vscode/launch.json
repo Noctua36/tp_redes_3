@@ -32,7 +32,7 @@
         "request": "launch",
         "program": "${workspaceRoot}/src/server/server",
         "args": [
-          "5050",
+          "2000",
           "256"
         ],
         "stopAtEntry": false,

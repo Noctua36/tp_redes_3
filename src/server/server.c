@@ -136,27 +136,30 @@ void estadoEnvia(int *operacao){
     t->arquivo = abreArquivoParaLeitura(recebido->nomeArquivo);
     // TODO: verificar se arquivo existe e tratar erro
     t->arquivoAberto = 1;
+    #ifdef DEBUG
+      printf("Abrindo arquivo...%s", recebido->nomeArquivo);
+    #endif
   } 
-  else {
-    // cria pacote para envio
-    envio = criaPacoteVazio();
-    envio->opcode = DADOS;
-    envio->numBloco = t->numBloco++;
-    leBytesDeArquivo(envio->dados, t->arquivo, mtu); // TODO: descontar do mtu bytes utilizados pelo cabeçalho
-    montaBufferPeloPacote(buf, envio);
+  
+  // cria pacote para envio
+  envio = criaPacoteVazio();
+  envio->opcode = DADOS;
+  envio->numBloco = t->numBloco++;
+  leBytesDeArquivo(envio->dados, t->arquivo, mtu); // TODO: descontar do mtu bytes utilizados pelo cabeçalho
+  montaBufferPeloPacote(buf, envio);
 
-    // cria socket
-    socket = tp_socket(porta);
-    status = tp_sendto(socket, buf, mtu, &cli_addr);
+  // cria socket
+  socket = tp_socket(porta);
+  status = tp_sendto(socket, buf, mtu, &cli_addr);
 
-    // verifica estado do envio
-    if (status > 0) {
-      *operacao = OPERACAO_OK;
-    } else {
-      *operacao = OPERACAO_NOK;
-    }
-    destroiPacote(envio);
+  // verifica estado do envio
+  if (status > 0) {
+    *operacao = OPERACAO_OK;
+  } else {
+    *operacao = OPERACAO_NOK;
   }
+  destroiPacote(envio);
+  
 
 
 }
