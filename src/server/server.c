@@ -129,7 +129,7 @@ void estadoEnvia(int *operacao){
     printf("\n[FSM] ENVIA\n");
   #endif
 
-  int socket, status;
+  int status;
   pacote *envio;
   // verifica se arquivo já está aberto
   if (!t->arquivoAberto){
@@ -153,9 +153,7 @@ void estadoEnvia(int *operacao){
     printf("Pacote a ser enviado: \n");
     imprimePacote(envio);
   #endif
-  // cria socket
-  socket = tp_socket(porta);
-  status = tp_sendto(socket, buf, mtu, &cli_addr);
+  status = tp_sendto(sockServFd, buf, mtu, &cli_addr);
 
   // verifica estado do envio
   if (status > 0) {
