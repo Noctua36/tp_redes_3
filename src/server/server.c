@@ -44,8 +44,8 @@ transacao *t;
 struct timeval timeout;      
 
 int main(int argc, char* argv[]){
-  
-  mtu = tp_mtu();
+  //TODO: avaliar se mtu deve vir da linha de comando
+  //mtu = tp_mtu();
 
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
   carregaParametros(&argc, argv, &porta, &mtu);
@@ -115,10 +115,12 @@ void estadoStandBy(int *operacao){
 
   montaPacotePeloBuffer(recebido, buf);
   #ifdef DEBUG
+    printf("buffer recebido:\n");
+    imprimeBuffer(buf);
     printf("pacote recebido:\n");
     imprimePacote(recebido);
   #endif
-  if (recebido->opcode == REQ)
+  if ((opCode)recebido->opcode == REQ)
     *operacao = OPERACAO_REQ_RECEBIDA;
   else 
     *operacao = OPERACAO_NOK;
@@ -143,7 +145,7 @@ void estadoEnvia(int *operacao){
   
   // cria pacote para envio
   envio = criaPacoteVazio();
-  envio->opcode = DADOS;
+  envio->opcode = (uint8_t)DADOS;
   envio->numBloco = t->numBloco++;
   leBytesDeArquivo(envio->dados, t->arquivo, mtu); // TODO: descontar do mtu bytes utilizados pelo cabeçalho
   montaBufferPeloPacote(buf, envio);

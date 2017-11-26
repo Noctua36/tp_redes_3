@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "pacote.h"
 
 typedef struct transacao {
@@ -15,8 +16,8 @@ typedef struct transacao {
     int posicaoArquivo;
     // char* bufferArquivo;
     int tamBufferArquivo;
-    unsigned short numBloco;
-    codigoErro codErro;
+    uint16_t numBloco;
+    uint8_t codErro;
     char *mensagemErro;
 } transacao;
 

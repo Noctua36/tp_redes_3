@@ -1,6 +1,8 @@
 #ifndef _PACOTE_H_ 
 #define _PACOTE_H_ 
 
+#include <stdint.h>
+
 // #define TAM_CARGA_PACOTE 512
 // #define TAM_PACOTE 515
 #define TAM_NOME_ARQUIVO 32
@@ -8,12 +10,11 @@
 
 #define DEBUG
 // declara enumeração de códigos de pacotes
-//TODO: atualizar tamanho do opcode. Atual 4 bytes pela enumeração
 // - REQ - requisição de arquivo. Formato: 
 // +-----+---~~---+---+
 // | opc |filename| 0 |
 // +-----+---~~---+---+
-//  2bytes n bytes
+//  1byte n bytes
 // opc - OpCode = REQ
 // filename = nome do arquivo requisitado
 // 
@@ -21,7 +22,7 @@
 // +-----+--------+-------+
 // | opc | #bloco | DADOS |
 // +-----+--------+-------+
-//  2bytes 2bytes   512bytes
+//  1byte 2bytes   512bytes
 // opc - OpCode = DADOS
 // #bloco = número do bloco
 // DADOS = dados do arquivo a enviado
@@ -30,7 +31,7 @@
 // +-----+--------+
 // | opc | #bloco |
 // +-----+--------+
-//  2bytes 2bytes  
+//  1byte 2bytes  
 // opc - OpCode = ACK
 // #bloco = número do bloco
 // 
@@ -38,7 +39,7 @@
 // +-----+---------+------------------+---+
 // | opc | ErrCode | Mensagem de erro | 0 |
 // +-----+---------+------------------+---+
-//  2bytes 1byte     nbytes
+//  1byte 1byte     nbytes
 // opc - OpCode = ERRO
 // ErrCode = código de erro
 // Mensagem de erro
@@ -60,12 +61,13 @@ typedef enum codigoErro { SEM_ERRO, COD_ERRO_DESCONHECIDO, COD_ERRO_ARQUIVO_NAO_
 extern int mtu;
 
 // estrutura para armazenar dados do pacote
+// compilador que escolhe tipo de dados da enum. Por este motivo, opcode e codErro são declarados como unsigned char e não seus respectivos tipos de enum
 typedef struct pacote {
-    opCode opcode;
+    uint8_t opcode; 
     char* nomeArquivo;
     char* dados;
-    unsigned short numBloco;
-    codigoErro codErro;
+    uint16_t numBloco;
+    uint8_t codErro;
     char* mensagemErro;
 } pacote;
 

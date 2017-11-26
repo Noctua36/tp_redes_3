@@ -1,6 +1,6 @@
 CC = gcc
 INC_DIR = ../commom/
-CFLAGS = -Wall -I$(INC_DIR)
+CFLAGS = -Wall -I$(INC_DIR) -g
 
 DEPS = fsmServidor.h arquivo.h pacote.h transacao.h tp_socket.h
 OBJ = server.o fsmServidor.o $(addprefix $(INC_DIR), arquivo.o pacote.o transacao.o tp_socket.o)

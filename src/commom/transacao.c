@@ -9,8 +9,8 @@ transacao* criaTransacaoVazia(){
     t->arquivoAberto = 0;
     t->posicaoArquivo = 0;
     t->tamBufferArquivo = 0;
-    t->numBloco = 0;
-    t->codErro = SEM_ERRO;
+    t->numBloco = (uint16_t)0;
+    t->codErro = (uint8_t)SEM_ERRO;
 
     t->mensagemErro = malloc(TAM_MSG_ERRO * sizeof(char));
     t->nomeArquivo = malloc(TAM_NOME_ARQUIVO * sizeof(char));

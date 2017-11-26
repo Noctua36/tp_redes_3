@@ -16,7 +16,7 @@ int main(){
     // teste pacote REQ
     printf("\nTeste REQ\n");
     limpaPacote(p);
-    p->opcode = REQ;
+    p->opcode = (uint8_t)REQ;
 
     char *nomeArquivo = "arquivo.txt";
     strcpy(p->nomeArquivo, nomeArquivo);
@@ -30,8 +30,8 @@ int main(){
     // teste pacote ACK
     printf("\nTeste ACK\n");
     limpaPacote(p);
-    p->opcode = ACK;
-    p->numBloco = 12;
+    p->opcode = (uint8_t)ACK;
+    p->numBloco = (uint16_t)12;
     imprimePacote(p);
     montaBufferPeloPacote(b, p);
     //imprimeBuffer(b);
@@ -42,12 +42,12 @@ int main(){
     // teste pacote DADOS
     printf("\nTeste DADOS\n");
     limpaPacote(p);
-    p->opcode = DADOS;
+    p->opcode = (uint8_t)DADOS;
     int cargaUtil = mtu - sizeof(opCode) - sizeof(unsigned short);
     for (int i = 0; i < cargaUtil; i++){
         p->dados[i] = 'a';
     }
-    p->numBloco = 9;
+    p->numBloco = (uint16_t)9;
     imprimePacote(p);
     montaBufferPeloPacote(b, p);
     //imprimeBuffer(b);
@@ -58,8 +58,8 @@ int main(){
     // teste pacote ERRO
     printf("\nTeste ERRO\n");
     limpaPacote(p);
-    p->opcode = ERRO;
-    p->codErro = COD_ERRO_ARQUIVO_NAO_EXISTE;
+    p->opcode = (uint8_t)ERRO;
+    p->codErro = (uint8_t)COD_ERRO_ARQUIVO_NAO_EXISTE;
     char *erro = MSG_ERRO_ARQUIVO_NAO_EXISTE;
     strcpy(p->mensagemErro, erro);
     imprimePacote(p);

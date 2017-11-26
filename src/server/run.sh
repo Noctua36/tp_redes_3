@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-./server 2000 1024
+./server 2000 256

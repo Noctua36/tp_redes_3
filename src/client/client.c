@@ -50,17 +50,18 @@ char host[TAM_HOST];
 so_addr *saddr;
 
 int main(int argc, char* argv[]){
-  int tamBuffer;
   // long int bytesRecebidos = 0;
   char nomeArquivo[TAM_NOME_ARQUIVO];
-  mtu = tp_mtu();
+  
+  //TODO: avaliar se mtu deve vir da linha de comando
+  //mtu = tp_mtu();
   // double comeco, duracao;
 
   // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
-  carregaParametros(&argc, argv, host, &porta, nomeArquivo, &tamBuffer);
+  carregaParametros(&argc, argv, host, &porta, nomeArquivo, &mtu);
 
   // aloca memória para buffer
-  buf = malloc(sizeof *buf * tamBuffer);
+  buf = malloc(sizeof *buf * mtu);
   if (buf == NULL){
     perror("Falha ao alocar memoria para buffer.");
     exit(EXIT_FAILURE);
@@ -111,7 +112,7 @@ void estadoEnviaReq(int *operacao){
   #endif
   int socket, status;
   // TODO: verificar possibilidade de criar pacote 'envio', enviar e excluí-lo aqui dentro desta função
-  envio->opcode = REQ;
+  envio->opcode = (uint8_t)REQ;
   strcpy(envio->nomeArquivo, t->nomeArquivo);
   montaBufferPeloPacote(buf, envio);
 
