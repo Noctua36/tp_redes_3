@@ -93,7 +93,8 @@ void montaBufferPeloPacote(char *b, pacote *p){
       p->numBloco = htons(p->numBloco);
       memcpy(b + posicao, &p->numBloco, sizeof p->numBloco);
       posicao += sizeof p->numBloco;
-      memcpy(b + posicao, &p->dados, cargaUtil);
+      
+      memcpy(b + posicao, p->dados, cargaUtil);
       break;
     case ERRO:
       p->codErro = p->codErro;
@@ -125,7 +126,7 @@ void carregaNumeroDoBloco(pacote *p, char *b){
 // extrai dados do buffer e carrega no pacote
 void carregaDados(pacote *p, char *b){
   int cargaUtil = mtu - sizeof(p->opcode) - sizeof(p->numBloco);
-  memcpy(&p->dados, b + sizeof p->opcode + sizeof p->numBloco, cargaUtil);
+  memcpy(p->dados, b + sizeof p->opcode + sizeof p->numBloco, cargaUtil);
 }
 
 // extrai código de erro do buffer e carrega no pacote
@@ -140,9 +141,10 @@ void carregaMensagemErro(pacote *p, char *b){
 
 #ifdef DEBUG
 void imprimeBuffer(char *b){
+  int cargaUtil = mtu - sizeof(uint8_t) - sizeof(uint16_t);
   int i;
   printf("BUFFER>\n");
-  for (i = 0; i < mtu;i++){
+  for (i = 0; i < cargaUtil; i++){
     printf("[%d]", b[i]);
   }
   printf("\n");
@@ -153,7 +155,8 @@ void imprimePacote(pacote *p){
   printf("PACOTE>\n");
   printf("opcode: %d\n", p->opcode);
   printf("nomeArquivo: %s\n", p->nomeArquivo);
-  printf("dados: %s\n", p->dados);
+  printf("dados: \n");
+  imprimeBuffer(p->dados);
   printf("numBloco: %d\n", p->numBloco);
   printf("codErro: %d\n", p->codErro);
   printf("mensagemErro: %s\n", p->mensagemErro);

@@ -41,7 +41,7 @@ void estadoErro(int*);
 void estadoEnviaAck(int*);      
 void estadoTermino(int*);
 
-int sockCliFd, mtu;
+int sock, mtu;
 pacote *envio;
 transacao *t;
 char* buf; // TODO: avaliar se buffer pode ser transferido para dentro da struct transacao
@@ -71,9 +71,6 @@ int main(int argc, char* argv[]){
 
   // chamada de função de inicialização para ambiente de testes
   tp_init();
-
-  // cria socket e armazena o respectivo file descriptor
-  // sockCliFd = tp_socket(porta);
 
   int estadoAtual = ESTADO_ENVIA_REQ;
   int operacao; 
@@ -110,17 +107,17 @@ void estadoEnviaReq(int *operacao){
   #ifdef DEBUG
     printf("\n[FSM] ENVIA_REQ\n");
   #endif
-  int socket, status;
+  int status;
   // TODO: verificar possibilidade de criar pacote 'envio', enviar e excluí-lo aqui dentro desta função
   envio->opcode = (uint8_t)REQ;
   strcpy(envio->nomeArquivo, t->nomeArquivo);
   montaBufferPeloPacote(buf, envio);
 
   // cria socket
-  socket = tp_socket(0);
+  sock = tp_socket(0);
   
   #ifdef DEBUG
-    printf("\n[DEBUG] socket: %d, mtu: %d\n", socket, mtu);
+    printf("\n[DEBUG] socket: %d, mtu: %d\n", sock, mtu);
     imprimeBuffer(buf);
   #endif
 
@@ -130,7 +127,7 @@ void estadoEnviaReq(int *operacao){
       // TODO: tratar erro
   }
 
-  status = tp_sendto(socket, buf, mtu, saddr);
+  status = tp_sendto(sock, buf, mtu, saddr);
 
   #ifdef DEBUG
     printf("\n[DEBUG] status: %d\n", status);
@@ -147,6 +144,19 @@ void estadoEnviaReq(int *operacao){
 void estadoRecebeArq(int *operacao){
   #ifdef DEBUG
     printf("\n[FSM] RECEBE_ARQ\n");
+  #endif
+
+  int bytesRecebidos = 0;
+  bytesRecebidos = tp_recvfrom(sock, buf, mtu, saddr);
+  pacote *recebido = criaPacoteVazio();
+  montaPacotePeloBuffer(recebido, buf);
+  
+  #ifdef DEBUG
+    printf("BytesRecebidos: %d\n", bytesRecebidos);
+    printf("Buffer recebido:\n");
+    imprimeBuffer(buf);
+    printf("Pacote recebido:\n");
+    imprimePacote(recebido);
   #endif
 }
 
