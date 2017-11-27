@@ -165,15 +165,13 @@ void estadoRecebeArq(int *operacao){
 
   if(recebido->opcode == (uint8_t)DADOS)
   {
-    if (fp == NULL)
+    if (!t->arquivoAberto)
     {
-      FILE *fp = abreArquivoParaEscrita(recebido->nomeArquivo);
-      fprintf(fp, "%s" , recebido->dados);
+      t->arquivo = abreArquivoParaEscrita(recebido->nomeArquivo);
+      t->arquivoAberto = t->arquivo != NULL ;
+      
     }
-    else
-    {
-      fprintf(fp, "%s" , recebido->dados);
-    }
+    escreveBytesEmArquivo(recebido->dados, t->arquivo , mtu - sizeof(recebido->opcode) - sizeof(recebido->numBloco));
   }
 }
 
