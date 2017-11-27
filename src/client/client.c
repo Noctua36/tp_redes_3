@@ -129,6 +129,8 @@ void estadoEnviaReq(int *operacao){
 
   status = tp_sendto(sock, buf, mtu, saddr);
 
+  // inserir verificação se foi final do arquivo
+
   #ifdef DEBUG
     printf("\n[DEBUG] status: %d\n", status);
   #endif
@@ -145,11 +147,13 @@ void estadoRecebeArq(int *operacao){
   #ifdef DEBUG
     printf("\n[FSM] RECEBE_ARQ\n");
   #endif
+  FILE *fp = NULL;
 
   int bytesRecebidos = 0;
   bytesRecebidos = tp_recvfrom(sock, buf, mtu, saddr);
   pacote *recebido = criaPacoteVazio();
   montaPacotePeloBuffer(recebido, buf);
+
   
   #ifdef DEBUG
     printf("BytesRecebidos: %d\n", bytesRecebidos);
@@ -158,6 +162,19 @@ void estadoRecebeArq(int *operacao){
     printf("Pacote recebido:\n");
     imprimePacote(recebido);
   #endif
+
+  if(recebido->opcode == (uint8_t)DADOS)
+  {
+    if (fp == NULL)
+    {
+      FILE *fp = abreArquivoParaEscrita(recebido->nomeArquivo);
+      fprintf(fp, "%s" , recebido->dados);
+    }
+    else
+    {
+      fprintf(fp, "%s" , recebido->dados);
+    }
+  }
 }
 
 void estadoErro(int *operacao){
@@ -167,9 +184,30 @@ void estadoErro(int *operacao){
 }
 
 void estadoEnviaAck(int *operacao){
+  int status;
+  
   #ifdef DEBUG
     printf("\n[FSM] ENVIA_ACK\n");
   #endif
+  //envio = criaPacoteVazio();
+  envio->opcode = (uint8_t)ACK;
+  envio->numBloco = t->numBloco ++;
+  montaBufferPeloPacote(buf, envio);
+  
+  status = tp_sendto(sock, buf, mtu, saddr);
+
+  #ifdef DEBUG
+  printf("\n[DEBUG] status: %d\n", status);
+  printf("\n[DEBUG] socket: %d, mtu: %d\n", sock, mtu);
+  //imprimeBuffer(buf);
+  #endif
+  // verifica estado do envio
+  if (status > 0) {
+  *operacao = OPERACAO_OK;
+  } else {
+  *operacao = OPERACAO_NOK;
+  }
+  destroiPacote(envio);
 }
 
 void estadoTermino(int *operacao){

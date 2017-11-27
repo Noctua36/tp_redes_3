@@ -140,7 +140,14 @@ void estadoEnvia(int *operacao){
       printf("Abrindo arquivo...%s", recebido->nomeArquivo);
     #endif
   } 
-  
+  //verifica se chegou ao fim do arquivo
+  if(feof(t->arquivo))
+  {
+    #ifdef DEBUG
+    printf("Fim do arquivo\n");
+    #endif
+    exit(EXIT_SUCCESS);
+  }
   // cria pacote para envio
   envio = criaPacoteVazio();
   envio->opcode = (uint8_t)DADOS;
@@ -189,6 +196,15 @@ void estadoAguardaAck(int *operacao){
   }
 
   montaPacotePeloBuffer(recebido, buf);
+  #ifdef DEBUG
+  
+  printf("Buffer Recebido\n");
+  imprimeBuffer(buf);
+  printf("Pacote Recebido\n");
+  imprimePacote(recebido);
+
+  #endif
+
   if (recebido->opcode == ACK){
     // TODO: extrair e avaliar sobre qual numBloco tal ACK é referente
     *operacao = OPERACAO_OK;
