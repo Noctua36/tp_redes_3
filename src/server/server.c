@@ -140,16 +140,32 @@ void estadoEnvia(int *operacao){
       printf("Abrindo arquivo...%s", recebido->nomeArquivo);
     #endif
   } 
+
+  envio = criaPacoteVazio();
+  
   //verifica se chegou ao fim do arquivo
   if(feof(t->arquivo))
   {
     #ifdef DEBUG
     printf("Fim do arquivo\n");
     #endif
+    //envia mensagem sinalizando o final do arquivo
+    envio->opcode = (uint8_t)FIM;
+    montaBufferPeloPacote(buf, envio);
+    status = tp_sendto(sockServFd, buf, strlen(buf), &cli_addr);
+    
+      // verifica estado do envio
+      if (status > 0) {
+        *operacao = OPERACAO_OK;
+      } else {
+        *operacao = OPERACAO_NOK;
+      }
+      destroiPacote(envio);
+      
+    
     exit(EXIT_SUCCESS);
   }
   // cria pacote para envio
-  envio = criaPacoteVazio();
   envio->opcode = (uint8_t)DADOS;
   envio->numBloco = t->numBloco++;
   int cargaUtil = mtu - sizeof(envio->opcode) - sizeof(envio->numBloco);

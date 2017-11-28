@@ -43,7 +43,7 @@
 // opc - OpCode = ERRO
 // ErrCode = código de erro
 // Mensagem de erro
-typedef enum opCode { INVALIDO, REQ, DADOS, ACK, ERRO } opCode;
+typedef enum opCode { INVALIDO, REQ, DADOS, ACK, ERRO, FIM } opCode;
 
 // declara tipos de erros (códigos e mensagens)
 // 0    Sem erro

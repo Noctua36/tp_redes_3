@@ -66,6 +66,8 @@ void montaPacotePeloBuffer(pacote *p, char *b){
       carregaCodigoErro(p, b);
       carregaMensagemErro(p, b);
       break;
+    case FIM:
+      break;
     default:
       p->codErro = (uint8_t)COD_ERRO_OP_ILEGAL;
       strcpy(p->mensagemErro, MSG_ERRO_OP_ILEGAL);
@@ -102,6 +104,8 @@ void montaBufferPeloPacote(char *b, pacote *p){
       posicao += sizeof p->codErro;
       strcpy(b + posicao, p->mensagemErro);
       break;
+    case FIM:
+      break;
     case INVALIDO:
       break;
   }
@@ -136,6 +140,10 @@ void carregaCodigoErro(pacote *p, char *b){
 
 // extrai mensagem de erro do buffer e carrega no pacote
 void carregaMensagemErro(pacote *p, char *b){
+  strcpy(p->mensagemErro, b + sizeof p->opcode + sizeof p->codErro);
+}
+
+void carregaFim(pacote *p, char *b){
   strcpy(p->mensagemErro, b + sizeof p->opcode + sizeof p->codErro);
 }
 

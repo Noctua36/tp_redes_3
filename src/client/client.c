@@ -127,7 +127,7 @@ void estadoEnviaReq(int *operacao){
       // TODO: tratar erro
   }
 
-  status = tp_sendto(sock, buf, mtumaaaaaaaaaaaaaaaaaaaa, saddr);
+  status = tp_sendto(sock, buf, strlen(buf), saddr);
 
   // inserir verificação se foi final do arquivo
 
@@ -148,7 +148,7 @@ void estadoRecebeArq(int *operacao){
     printf("\n[FSM] RECEBE_ARQ\n");
   #endif
   //FILE *fp = NULL;
-  int bytesEscritos = 0;
+  
 
   int bytesRecebidos = 0;
   bytesRecebidos = tp_recvfrom(sock, buf, mtu, saddr);
@@ -164,7 +164,7 @@ void estadoRecebeArq(int *operacao){
     imprimePacote(recebido);
   #endif
 
-  if(recebido->opcode == (uint8_t)DADOS) 
+  if (recebido->opcode == (uint8_t)DADOS) 
    {
      if (!t->arquivoAberto)
      {
@@ -173,8 +173,22 @@ void estadoRecebeArq(int *operacao){
       
      }
      
-     bytesEscritos = escreveBytesEmArquivo(recebido->dados, t->arquivo , mtu - sizeof(recebido->opcode) - sizeof(recebido->numBloco));
+     escreveBytesEmArquivo(recebido->dados, t->arquivo , mtu - sizeof(recebido->opcode) - sizeof(recebido->numBloco));
      
+   }
+   if (recebido->opcode == (uint8_t)FIM)
+   {
+    
+    
+    fechaArquivo( t->arquivo);
+
+    #ifdef DEBUG
+      printf("Arquivo chegou ao final\n");
+
+    #endif
+    //TODO: LIBERAR TODAS AS MEMORIAS
+
+    exit(EXIT_SUCCESS);
    }
 }
 
@@ -195,7 +209,7 @@ void estadoEnviaAck(int *operacao){
   envio->numBloco = t->numBloco ++;
   montaBufferPeloPacote(buf, envio);
   
-  status = tp_sendto(sock, buf, mtu, saddr);
+  status = tp_sendto(sock, buf, strlen(buf), saddr);
 
   #ifdef DEBUG
   printf("\n[DEBUG] status: %d\n", status);
