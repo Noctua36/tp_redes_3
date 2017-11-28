@@ -5,7 +5,15 @@ FILE* abreArquivoParaLeitura(char *nomeArquivo){
 }
 
 FILE* abreArquivoParaEscrita(char *nomeArquivo){
-    return fopen(nomeArquivo, "a+"); // abre no modo appending se arquivo existe
+    FILE* f = fopen(nomeArquivo, "a+");
+    printf("%s<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n", nomeArquivo);
+    if(f==NULL){
+        f = fopen(nomeArquivo, "w"); 
+    }
+    if(f==NULL){
+        //mensagem de erro que não conseguiu abrir o arquivo 
+    }
+    return f; // abre no modo appending se arquivo existe
 }
 
 // retorna quantidade de bytes lidos
