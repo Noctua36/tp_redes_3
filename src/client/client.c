@@ -6,28 +6,13 @@
 #include <time.h>
 #include <sys/time.h>
 #include <netinet/in.h>
-#include "tp_socket.h"
 #include "fsmCliente.h"
+#include "../commom/tp_socket.h"
 #include "../commom/arquivo.h"
 #include "../commom/pacote.h"
 #include "../commom/transacao.h"
-// #include <sys/types.h>
-// #include <sys/socket.h>
-// #include <netdb.h>
-
-// #include <unistd.h>
-// #include <arpa/inet.h> //INET_NTOP
-// #include <stdbool.h>
 
 #define DEBUG
-
-// #ifdef DEBUG
-// #define DEBUG_TEST 1
-// #else
-// #define DEBUG_TEST 0
-// #endif
-// #define debug_print(fmt, ...) 
-//   do { if (DEBUG_TEST) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
 
 #define TAM_PORTA 6
 #define TAM_NOME_ARQUIVO 32
@@ -42,10 +27,11 @@ void estadoErro(int*);
 void estadoEnviaAck(int*);      
 void estadoTermino(int*);
 
+// TODO: avaliar se buffer, mtu, sock.. podem ser transferidos para dentro da struct transacao
 int sock, mtu;
 pacote *envio;
 transacao *t;
-char* buf; // TODO: avaliar se buffer pode ser transferido para dentro da struct transacao
+char* buf; 
 short int porta;
 char host[TAM_HOST];
 so_addr *saddr;
@@ -57,7 +43,6 @@ double t_t0;
 double t_tf;
 
 int main(int argc, char* argv[]){
-  // long int bytesRecebidos = 0;
   char nomeArquivo[TAM_NOME_ARQUIVO];
   
   //TODO: avaliar se mtu deve vir da linha de comando
@@ -158,14 +143,11 @@ void estadoRecebeArq(int *operacao){
     printf("\n[FSM] RECEBE_ARQ\n");
   #endif
   
-  
-
   int bytesRecebidos = 0;
   bytesRecebidos = tp_recvfrom(sock, buf, mtu, saddr);
   contaBytes += bytesRecebidos;
   pacote *recebido = criaPacoteVazio();
   montaPacotePeloBuffer(recebido, buf);
-
   
   #ifdef DEBUG
     printf("BytesRecebidos: %d\n", bytesRecebidos);
@@ -205,6 +187,7 @@ void estadoRecebeArq(int *operacao){
 
     exit(EXIT_SUCCESS);
    }
+  //destroiPacote(recebido);
 }
 
 void estadoErro(int *operacao){

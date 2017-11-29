@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <arpa/inet.h> //INET_NTOP
 #include <signal.h>
-#include "tp_socket.h"
+#include "../commom/tp_socket.h"
 #include "fsmServidor.h"
 #include "../commom/arquivo.h"
 #include "../commom/pacote.h"
@@ -20,22 +20,18 @@
 
 #define DEBUG
 
-#define TIMEOUT 5
+#define TIMEOUT 2 // em segundos
 
 // protótipo das funções
 void carregaParametros(int*, char**, short int*, int*);
 void limpaBuffer(char*);
-void timeoutHandler(int);
 void estadoStandBy(int*);
 void estadoAguardaAck(int*);
 void estadoEnvia(int*);
 void estadoReseta(int*);
 void estadoErro(int*);
-// int pacotePedidoArquivo();
-// int pacoteRecebeAck();
-// int pacoteRecebeInvalido();
 
-int sockServFd, sockCliFd, mtu;
+int sock, mtu;
 short int porta;
 struct sockaddr_in cli_addr;
 char* buf;
@@ -57,14 +53,14 @@ int main(int argc, char* argv[]){
     exit(EXIT_FAILURE);
   }
  
-  timeout.tv_sec = 10;
+  timeout.tv_sec = TIMEOUT;
   timeout.tv_usec = 0;
 
   // chamada de função de inicialização para ambiente de testes
   tp_init();
  
   // cria socket e armazena o respectivo file descriptor
-  sockServFd = tp_socket(porta);
+  sock = tp_socket(porta);
 
   int estadoAtual = ESTADO_STANDBY;
   int operacao;   
@@ -102,7 +98,7 @@ void estadoStandBy(int *operacao){
   int bytesRecebidos = 0;
  
   limpaBuffer(buf);
-  bytesRecebidos = tp_recvfrom(sockServFd, buf, mtu, &cli_addr);                     
+  bytesRecebidos = tp_recvfrom(sock, buf, mtu, &cli_addr);                     
         
   #ifdef DEBUG
     printf("bytesRecebidos: %d\n", bytesRecebidos);
@@ -152,7 +148,7 @@ void estadoEnvia(int *operacao){
     //envia mensagem sinalizando o final do arquivo
     envio->opcode = (uint8_t)FIM;
     montaBufferPeloPacote(buf, envio);
-    status = tp_sendto(sockServFd, buf, strlen(buf), &cli_addr);
+    status = tp_sendto(sock, buf, strlen(buf), &cli_addr);
     
       // verifica estado do envio
       if (status > 0) {
@@ -173,11 +169,15 @@ void estadoEnvia(int *operacao){
   montaBufferPeloPacote(buf, envio);
 
   #ifdef DEBUG
+    printf("Buffer a ser enviado: \n");
+    imprimeBuffer(buf);
     printf("Pacote a ser enviado: \n");
     imprimePacote(envio);
   #endif
-  status = tp_sendto(sockServFd, buf, mtu, &cli_addr);
-
+  status = tp_sendto(sock, buf, mtu, &cli_addr);
+  #ifdef DEBUG
+    printf("Bytes enviados: %d \n", status);
+  #endif
   // verifica estado do envio
   if (status > 0) {
     *operacao = OPERACAO_OK;
@@ -197,15 +197,11 @@ void estadoAguardaAck(int *operacao){
   
   limpaBuffer(buf);
   // inicia temporizador de timeout
-  // signal(SIGALRM, timeoutHandler);
-  // alarm(TIMEOUT);
-  if (setsockopt (sockServFd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0){
+  if (setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0){
     perror("falha ao definir timeout para socket.\n");
     // TODO: tratar erro
   }
-  bytesRecebidos = tp_recvfrom(sockServFd, buf, mtu, &cli_addr);                     
-  // cancela timeout
-  // alarm(0);        
+  bytesRecebidos = tp_recvfrom(sock, buf, mtu, &cli_addr);                     
   if (bytesRecebidos == -1){
     perror("ERRO-> Nao foi possivel ler comando do socket: %s]\n");
     *operacao = OPERACAO_NOK;
@@ -240,24 +236,6 @@ void estadoErro(int *operacao){
     printf("\n[FSM] ERRO\n");
   #endif
 }
-
-void timeoutHandler(int signo){
-  t->timeoutCount++;
-  t->timedout = 1;
-}
-
-// int pacotePedidoArquivo(){
-//   int existe = verificaSeArquivoExiste(pacote.nomeArquivo);
-//   if (!existe){
-//     pacote.erro = 2; //TODO: tratar erro
-//     return OPERACAO_NOK;
-//   }
-//   abreArquivoParaLeitura(pacote.nomeArquivo);
-//   return (existe) ? OPERACAO_OK : OPERACAO_NOK;
-// }
-
-// int pacoteRecebeAck(){return 0;}
-// int pacoteRecebeInvalido(){return 0;}
 
 // UTIL
 void carregaParametros(int* argc, char** argv, short int* porta, int* tamBuffer){
