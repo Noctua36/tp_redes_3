@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include "tp_socket.h"
 #include "fsmCliente.h"
@@ -48,6 +49,12 @@ char* buf; // TODO: avaliar se buffer pode ser transferido para dentro da struct
 short int porta;
 char host[TAM_HOST];
 so_addr *saddr;
+int contaBytes = 0;
+//variaveis para o tempo
+struct timeval inicio_tempo, fim_tempo;
+double t_total;
+double t_t0;
+double t_tf;
 
 int main(int argc, char* argv[]){
   // long int bytesRecebidos = 0;
@@ -126,7 +133,10 @@ void estadoEnviaReq(int *operacao){
       perror("Erro no envio do pacote de requisicao de arquivo");
       // TODO: tratar erro
   }
+  // iniciar a contagem do tempo
+  gettimeofday(&inicio_tempo , NULL);
 
+  //envia requisição ao servidor
   status = tp_sendto(sock, buf, strlen(buf), saddr);
 
   // inserir verificação se foi final do arquivo
@@ -147,11 +157,12 @@ void estadoRecebeArq(int *operacao){
   #ifdef DEBUG
     printf("\n[FSM] RECEBE_ARQ\n");
   #endif
-  //FILE *fp = NULL;
+  
   
 
   int bytesRecebidos = 0;
   bytesRecebidos = tp_recvfrom(sock, buf, mtu, saddr);
+  contaBytes += bytesRecebidos;
   pacote *recebido = criaPacoteVazio();
   montaPacotePeloBuffer(recebido, buf);
 
@@ -182,11 +193,15 @@ void estadoRecebeArq(int *operacao){
     
     fechaArquivo( t->arquivo);
 
+    gettimeofday(&fim_tempo , NULL);
+    t_t0 = (double)inicio_tempo.tv_sec+(double)inicio_tempo.tv_usec/1000000;
+    t_tf = (double)fim_tempo.tv_sec+(double)fim_tempo.tv_usec/1000000;
+    t_total = t_tf - t_t0;
     #ifdef DEBUG
-      printf("Arquivo chegou ao final\n");
-
+    
     #endif
     //TODO: LIBERAR TODAS AS MEMORIAS
+    printf("Buffer %5u bytes, %0.2lf kbps (%u bytes em %3.6lf s)\n", mtu, ((double)contaBytes*8)/(1000*t_total), contaBytes, t_total);
 
     exit(EXIT_SUCCESS);
    }
