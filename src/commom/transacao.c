@@ -1,4 +1,5 @@
 #include "transacao.h"
+#include "crc.h"
 
 transacao* criaTransacaoVazia(){
     transacao *t = malloc(sizeof *t);
@@ -21,4 +22,10 @@ transacao* criaTransacaoVazia(){
     }
 
     return t;
+}
+
+// verifica se mensagem é valida a partir da verificação do crc recebido
+int validaMensagem(char *msg, int crc){
+  int crcCalc = calculaCRC(msg);
+  return crcCalc == crc;
 }

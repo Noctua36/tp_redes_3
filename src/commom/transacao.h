@@ -22,5 +22,6 @@ typedef struct transacao {
 } transacao;
 
 transacao* criaTransacaoVazia();
+int validaMensagem(char*, int);
 
 #endif /* _TRANSACAO_H_ */
