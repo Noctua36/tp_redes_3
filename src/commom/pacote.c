@@ -9,7 +9,7 @@
 
 // aloca memória e retorna ponteiro para pacote criado
 pacote* criaPacoteVazio(){
-  int cargaUtil = mtu - sizeof(uint8_t) - sizeof(uint16_t);
+  int cargaUtil = tam_msg - sizeof(uint8_t) - sizeof(uint16_t);
   pacote *p = malloc(sizeof *p);
   p->nomeArquivo = malloc(TAM_NOME_ARQUIVO * sizeof(char));
   p->dados = malloc(cargaUtil * sizeof(char));
@@ -34,7 +34,7 @@ void destroiPacote(pacote *p){
 
 // inicializa pacote
 void limpaPacote(pacote *p){
-  int cargaUtil = mtu - sizeof(p->opcode) - sizeof(p->numBloco);
+  int cargaUtil = tam_msg - sizeof(p->opcode) - sizeof(p->numBloco);
   p->opcode = (uint8_t)INVALIDO;
   p->codErro = (uint8_t)SEM_ERRO;
   memset(p->mensagemErro, 0, TAM_MSG_ERRO);
@@ -77,9 +77,9 @@ void montaPacotePeloBuffer(pacote *p, char *b){
 // cria buffer de pacote a partir dos dados da estrutura do pacote
 void montaBufferPeloPacote(char *b, pacote *p){
   unsigned short posicao = 0;
-  int cargaUtil = mtu - sizeof(p->opcode) - sizeof(p->numBloco);
+  int cargaUtil = tam_msg - sizeof(p->opcode) - sizeof(p->numBloco);
   // inicializa buffer
-  memset(b, 0, mtu);
+  memset(b, 0, tam_msg);
 
   memcpy(b, &p->opcode, sizeof p->opcode);
   posicao += sizeof p->opcode;
@@ -129,7 +129,7 @@ void carregaNumeroDoBloco(pacote *p, char *b){
 
 // extrai dados do buffer e carrega no pacote
 void carregaDados(pacote *p, char *b){
-  int cargaUtil = mtu - sizeof(p->opcode) - sizeof(p->numBloco);
+  int cargaUtil = tam_msg - sizeof(p->opcode) - sizeof(p->numBloco);
   memcpy(p->dados, b + sizeof p->opcode + sizeof p->numBloco, cargaUtil);
 }
 
@@ -149,7 +149,7 @@ void carregaFim(pacote *p, char *b){
 
 #ifdef DEBUG
 void imprimeBuffer(char *b){
-  int cargaUtil = mtu - sizeof(uint8_t) - sizeof(uint16_t);
+  int cargaUtil = tam_msg - sizeof(uint8_t) - sizeof(uint16_t);
   int i;
   printf("BUFFER>\n");
   for (i = 0; i < cargaUtil; i++){

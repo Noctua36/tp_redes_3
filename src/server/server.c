@@ -31,7 +31,7 @@ void estadoEnvia(int*);
 void estadoReseta(int*);
 void estadoErro(int*);
 
-int sock, mtu;
+int sock, tam_msg;
 short int porta;
 struct sockaddr_in cli_addr;
 char* buf;
@@ -40,14 +40,12 @@ transacao *t;
 struct timeval timeout;      
 
 int main(int argc, char* argv[]){
-  //TODO: avaliar se mtu deve vir da linha de comando
-  //mtu = tp_mtu();
-
+  
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
-  carregaParametros(&argc, argv, &porta, &mtu);
+  carregaParametros(&argc, argv, &porta, &tam_msg);
   
   // aloca memória para buffer
-  buf = malloc(sizeof *buf * mtu);
+  buf = malloc(sizeof *buf * tam_msg);
   if (buf == NULL){
     perror("Falha ao alocar memoria para buffer.");
     exit(EXIT_FAILURE);
@@ -98,7 +96,7 @@ void estadoStandBy(int *operacao){
   int bytesRecebidos = 0;
  
   limpaBuffer(buf);
-  bytesRecebidos = tp_recvfrom(sock, buf, mtu, &cli_addr);                     
+  bytesRecebidos = tp_recvfrom(sock, buf, tam_msg, &cli_addr);                     
         
   #ifdef DEBUG
     printf("bytesRecebidos: %d\n", bytesRecebidos);
@@ -164,7 +162,7 @@ void estadoEnvia(int *operacao){
   // cria pacote para envio
   envio->opcode = (uint8_t)DADOS;
   envio->numBloco = t->numBloco++;
-  int cargaUtil = mtu - sizeof(envio->opcode) - sizeof(envio->numBloco);
+  int cargaUtil = tam_msg - sizeof(envio->opcode) - sizeof(envio->numBloco);
   leBytesDeArquivo(envio->dados, t->arquivo, cargaUtil);
   montaBufferPeloPacote(buf, envio);
 
@@ -174,7 +172,7 @@ void estadoEnvia(int *operacao){
     printf("Pacote a ser enviado: \n");
     imprimePacote(envio);
   #endif
-  status = tp_sendto(sock, buf, mtu, &cli_addr);
+  status = tp_sendto(sock, buf, tam_msg, &cli_addr);
   #ifdef DEBUG
     printf("Bytes enviados: %d \n", status);
   #endif
@@ -201,7 +199,7 @@ void estadoAguardaAck(int *operacao){
     perror("falha ao definir timeout para socket.\n");
     // TODO: tratar erro
   }
-  bytesRecebidos = tp_recvfrom(sock, buf, mtu, &cli_addr);                     
+  bytesRecebidos = tp_recvfrom(sock, buf, tam_msg, &cli_addr);                     
   if (bytesRecebidos == -1){
     perror("ERRO-> Nao foi possivel ler comando do socket: %s]\n");
     *operacao = OPERACAO_NOK;
@@ -260,5 +258,5 @@ void carregaParametros(int* argc, char** argv, short int* porta, int* tamBuffer)
 }
 
 void limpaBuffer(char *b){
-  memset(b, 0, mtu);
+  memset(b, 0, tam_msg);
 }

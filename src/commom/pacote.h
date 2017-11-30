@@ -43,6 +43,13 @@
 // opc - OpCode = ERRO
 // ErrCode = código de erro
 // Mensagem de erro
+// 
+// - FIM - sinaliza fim do envio. Formato: 
+// +-----+
+// | opc |
+// +-----+
+//  1byte 
+// opc - OpCode = FIM
 typedef enum opCode { INVALIDO, REQ, DADOS, ACK, ERRO, FIM } opCode;
 
 // declara tipos de erros (códigos e mensagens)
@@ -57,18 +64,18 @@ typedef enum codigoErro { SEM_ERRO, COD_ERRO_DESCONHECIDO, COD_ERRO_ARQUIVO_NAO_
 #define MSG_ERRO_VIOLACAO_ACESSO "Violação de acesso." 
 #define MSG_ERRO_OP_ILEGAL "Operação ilegal."
 
-// mtu deve ser definido no programa principal
-extern int mtu;
+// tam_msg deve ser definido no programa principal
+extern int tam_msg;
 
 // estrutura para armazenar dados do pacote
 // compilador que escolhe tipo de dados da enum. Por este motivo, opcode e codErro são declarados como unsigned char e não seus respectivos tipos de enum
 typedef struct pacote {
-    uint8_t opcode; 
-    char* nomeArquivo;
-    char* dados;
-    uint16_t numBloco;
-    uint8_t codErro;
-    char* mensagemErro;
+  uint8_t opcode; 
+  char* nomeArquivo;
+  char* dados;
+  uint16_t numBloco;
+  uint8_t codErro;
+  char* mensagemErro;
 } pacote;
 
 pacote* criaPacoteVazio();
