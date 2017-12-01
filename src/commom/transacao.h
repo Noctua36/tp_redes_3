@@ -4,12 +4,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <arpa/inet.h>
 #include "pacote.h"
 
+#define TIMEOUT 2 // em segundos
+
 typedef struct transacao {
+    int socketFd;
+    // int tamMsg;
+    int cargaUtilPacoteDados;
+    struct sockaddr_in toAddr;
+    char* buf;
+    pacote *recebido;
+    pacote *envio;
     int timeoutCount;
     int timedout;
-    int terminada;
+    //int envioCompleto;
     int arquivoAberto;
     char* nomeArquivo;
     FILE* arquivo;
@@ -22,6 +32,8 @@ typedef struct transacao {
 } transacao;
 
 transacao* criaTransacaoVazia();
-int validaMensagem(char*, int);
+void destroiTransacao();
+int validaMensagem(char*);
+int extraiCRCDaMensagem(char*);
 
 #endif /* _TRANSACAO_H_ */

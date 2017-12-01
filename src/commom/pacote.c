@@ -9,7 +9,7 @@
 
 // aloca memória e retorna ponteiro para pacote criado
 pacote* criaPacoteVazio(){
-  int cargaUtil = tam_msg - sizeof(uint8_t) - sizeof(uint16_t);
+  int cargaUtil = tamMsg - sizeof(uint8_t) - sizeof(uint16_t);
   pacote *p = malloc(sizeof *p);
   p->nomeArquivo = malloc(TAM_NOME_ARQUIVO * sizeof(char));
   p->dados = malloc(cargaUtil * sizeof(char));
@@ -34,7 +34,7 @@ void destroiPacote(pacote *p){
 
 // inicializa pacote
 void limpaPacote(pacote *p){
-  int cargaUtil = tam_msg - sizeof(p->opcode) - sizeof(p->numBloco);
+  int cargaUtil = tamMsg - sizeof(p->opcode) - sizeof(p->numBloco);
   p->opcode = (uint8_t)INVALIDO;
   p->codErro = (uint8_t)SEM_ERRO;
   memset(p->mensagemErro, 0, TAM_MSG_ERRO);
@@ -44,7 +44,7 @@ void limpaPacote(pacote *p){
 }
 
 // extrai dados do buffer e os organiza na estrutura do pacote
-void montaPacotePeloBuffer(pacote *p, char *b){
+void montaPacotePelaMensagem(pacote *p, char *b){
   // inicializa pacote
   limpaPacote(p);
   
@@ -75,11 +75,11 @@ void montaPacotePeloBuffer(pacote *p, char *b){
 }
 
 // cria buffer de pacote a partir dos dados da estrutura do pacote
-void montaBufferPeloPacote(char *b, pacote *p){
+void montaMensagemPeloPacote(char *b, pacote *p){
   unsigned short posicao = 0;
-  int cargaUtil = tam_msg - sizeof(p->opcode) - sizeof(p->numBloco);
+  int cargaUtil = tamMsg - sizeof(p->opcode) - sizeof(p->numBloco);
   // inicializa buffer
-  memset(b, 0, tam_msg);
+  memset(b, 0, tamMsg);
 
   memcpy(b, &p->opcode, sizeof p->opcode);
   posicao += sizeof p->opcode;
@@ -109,6 +109,7 @@ void montaBufferPeloPacote(char *b, pacote *p){
     case INVALIDO:
       break;
   }
+  //TODO: calcular e incluir CRC
 }
 
 // extrai opcode do buffer e carrega no pacote
@@ -129,7 +130,7 @@ void carregaNumeroDoBloco(pacote *p, char *b){
 
 // extrai dados do buffer e carrega no pacote
 void carregaDados(pacote *p, char *b){
-  int cargaUtil = tam_msg - sizeof(p->opcode) - sizeof(p->numBloco);
+  int cargaUtil = tamMsg - sizeof(p->opcode) - sizeof(p->numBloco);
   memcpy(p->dados, b + sizeof p->opcode + sizeof p->numBloco, cargaUtil);
 }
 
@@ -149,9 +150,9 @@ void carregaFim(pacote *p, char *b){
 
 #ifdef DEBUG
 void imprimeBuffer(char *b){
-  int cargaUtil = tam_msg - sizeof(uint8_t) - sizeof(uint16_t);
+  int cargaUtil = tamMsg - sizeof(uint8_t) - sizeof(uint16_t);
   int i;
-  printf("BUFFER>\n");
+  printf("[BUFFER]:\n");
   for (i = 0; i < cargaUtil; i++){
     printf("[%d]", b[i]);
   }
@@ -160,10 +161,10 @@ void imprimeBuffer(char *b){
 
 void imprimePacote(pacote *p){
   // imprime estrutura
-  printf("PACOTE>\n");
+  printf("[PACOTE]:\n");
   printf("opcode: %d\n", p->opcode);
   printf("nomeArquivo: %s\n", p->nomeArquivo);
-  printf("dados: \n");
+  printf("dados: ");
   imprimeBuffer(p->dados);
   printf("numBloco: %d\n", p->numBloco);
   printf("codErro: %d\n", p->codErro);

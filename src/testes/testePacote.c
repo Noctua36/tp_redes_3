@@ -4,14 +4,14 @@
 #include <string.h>
 #include <netinet/in.h>
 
-int tam_msg = 1024;
+int tamMsg = 1024;
 
 int main(){
     pacote *p, *p2;
     p = criaPacoteVazio();
     p2 = criaPacoteVazio();
     char *b;
-    b = malloc(tam_msg * sizeof (char));
+    b = malloc(tamMsg * sizeof (char));
     
     // teste pacote REQ
     printf("\nTeste REQ\n");
@@ -21,10 +21,10 @@ int main(){
     char *nomeArquivo = "arquivo.txt";
     strcpy(p->nomeArquivo, nomeArquivo);
     imprimePacote(p);
-    montaBufferPeloPacote(b, p);
+    montaMensagemPeloPacote(b, p);
     //imprimeBuffer(b);
     limpaPacote(p2);
-    montaPacotePeloBuffer(p2, b);
+    montaPacotePelaMensagem(p2, b);
     imprimePacote(p2);
 
     // teste pacote ACK
@@ -33,26 +33,26 @@ int main(){
     p->opcode = (uint8_t)ACK;
     p->numBloco = (uint16_t)12;
     imprimePacote(p);
-    montaBufferPeloPacote(b, p);
+    montaMensagemPeloPacote(b, p);
     //imprimeBuffer(b);
     limpaPacote(p2);
-    montaPacotePeloBuffer(p2, b);
+    montaPacotePelaMensagem(p2, b);
     imprimePacote(p2);
 
     // teste pacote DADOS
     printf("\nTeste DADOS\n");
     limpaPacote(p);
     p->opcode = (uint8_t)DADOS;
-    int cargaUtil = tam_msg - sizeof(opCode) - sizeof(unsigned short);
+    int cargaUtil = tamMsg - sizeof(opCode) - sizeof(unsigned short);
     for (int i = 0; i < cargaUtil; i++){
         p->dados[i] = 'a';
     }
     p->numBloco = (uint16_t)9;
     imprimePacote(p);
-    montaBufferPeloPacote(b, p);
+    montaMensagemPeloPacote(b, p);
     //imprimeBuffer(b);
     limpaPacote(p2);
-    montaPacotePeloBuffer(p2, b);
+    montaPacotePelaMensagem(p2, b);
     imprimePacote(p2);
 
     // teste pacote ERRO
@@ -63,10 +63,10 @@ int main(){
     char *erro = MSG_ERRO_ARQUIVO_NAO_EXISTE;
     strcpy(p->mensagemErro, erro);
     imprimePacote(p);
-    montaBufferPeloPacote(b, p);
+    montaMensagemPeloPacote(b, p);
     //imprimeBuffer(b);
     limpaPacote(p2);
-    montaPacotePeloBuffer(p2, b);
+    montaPacotePelaMensagem(p2, b);
     imprimePacote(p2);
 
     return 0;

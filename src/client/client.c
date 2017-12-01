@@ -27,8 +27,8 @@ void estadoErro(int*);
 void estadoEnviaAck(int*);      
 void estadoTermino(int*);
 
-// TODO: avaliar se buffer, tam_msg, sock.. podem ser transferidos para dentro da struct transacao
-int sock, tam_msg;
+// TODO: avaliar se buffer, tamMsg, sock.. podem ser transferidos para dentro da struct transacao
+int sock, tamMsg;
 pacote *envio;
 transacao *t;
 char* buf; 
@@ -48,10 +48,10 @@ int main(int argc, char* argv[]){
   // double comeco, duracao;
 
   // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
-  carregaParametros(&argc, argv, host, &porta, nomeArquivo, &tam_msg);
+  carregaParametros(&argc, argv, host, &porta, nomeArquivo, &tamMsg);
 
   // aloca memória para buffer
-  buf = malloc(sizeof *buf * tam_msg);
+  buf = malloc(sizeof *buf * tamMsg);
   if (buf == NULL){
     perror("Falha ao alocar memoria para buffer.");
     exit(EXIT_FAILURE);
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]){
   int estadoAtual = ESTADO_ENVIA_REQ;
   int operacao; 
 
-  envio = criaPacoteVazio(tam_msg);
+  envio = criaPacoteVazio(tamMsg);
   t = criaTransacaoVazia();
   strcpy(t->nomeArquivo, nomeArquivo);
   while(1){
@@ -101,13 +101,13 @@ void estadoEnviaReq(int *operacao){
   // TODO: verificar possibilidade de criar pacote 'envio', enviar e excluí-lo aqui dentro desta função
   envio->opcode = (uint8_t)REQ;
   strcpy(envio->nomeArquivo, t->nomeArquivo);
-  montaBufferPeloPacote(buf, envio);
+  montaMensagemPeloPacote(buf, envio);
 
   // cria socket
   sock = tp_socket(0);
   
   #ifdef DEBUG
-    printf("\n[DEBUG] socket: %d, tam_msg: %d\n", sock, tam_msg);
+    printf("\n[DEBUG] socket: %d, tamMsg: %d\n", sock, tamMsg);
     imprimeBuffer(buf);
   #endif
 
@@ -142,10 +142,10 @@ void estadoRecebeArq(int *operacao){
     #endif
     
     int bytesRecebidos = 0;
-    bytesRecebidos = tp_recvfrom(sock, buf, tam_msg, saddr);
+    bytesRecebidos = tp_recvfrom(sock, buf, tamMsg, saddr);
     contaBytes += bytesRecebidos;
     pacote *recebido = criaPacoteVazio();
-    montaPacotePeloBuffer(recebido, buf);
+    montaPacotePelaMensagem(recebido, buf);
     
     #ifdef DEBUG
       printf("BytesRecebidos: %d\n", bytesRecebidos);
@@ -164,7 +164,7 @@ void estadoRecebeArq(int *operacao){
       
      }
      
-     escreveBytesEmArquivo(recebido->dados, t->arquivo , tam_msg - sizeof(recebido->opcode) - sizeof(recebido->numBloco));
+     escreveBytesEmArquivo(recebido->dados, t->arquivo , tamMsg - sizeof(recebido->opcode) - sizeof(recebido->numBloco));
      
    }
    if (recebido->opcode == (uint8_t)FIM)
@@ -181,7 +181,7 @@ void estadoRecebeArq(int *operacao){
     
     #endif
     //TODO: LIBERAR TODAS AS MEMORIAS
-    printf("Buffer %5u bytes, %0.2lf kbps (%u bytes em %3.6lf s)\n", tam_msg, ((double)contaBytes*8)/(1000*t_total), contaBytes, t_total);
+    printf("Buffer %5u bytes, %0.2lf kbps (%u bytes em %3.6lf s)\n", tamMsg, ((double)contaBytes*8)/(1000*t_total), contaBytes, t_total);
 
     exit(EXIT_SUCCESS);
    }
@@ -203,13 +203,13 @@ void estadoEnviaAck(int *operacao){
   //envio = criaPacoteVazio();
   envio->opcode = (uint8_t)ACK;
   envio->numBloco = t->numBloco ++;
-  montaBufferPeloPacote(buf, envio);
+  montaMensagemPeloPacote(buf, envio);
   
   status = tp_sendto(sock, buf, strlen(buf), saddr);
 
   #ifdef DEBUG
   printf("\n[DEBUG] status: %d\n", status);
-  printf("\n[DEBUG] socket: %d, tam_msg: %d\n", sock, tam_msg);
+  printf("\n[DEBUG] socket: %d, tamMsg: %d\n", sock, tamMsg);
   //imprimeBuffer(buf);
   #endif
   // verifica estado do envio
