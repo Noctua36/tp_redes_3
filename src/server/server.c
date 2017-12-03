@@ -34,6 +34,7 @@ void estadoErro(int*);
 void estadoTermino(int*);
 
 short int porta;
+short int tamJanela;
 int tamMaxMsg;
 transacao *t;
 struct timeval timeout;      
@@ -164,7 +165,7 @@ void estadoReseta(int *operacao){
     printf("\n[FSM] RESETA\n");
   #endif
   destroiTransacao(t);
-  t = inicializaTransacao(tamMaxMsg, porta);
+  t = inicializaTransacao(tamMaxMsg, porta, tamJanela);
   *operacao = OPERACAO_OK;
 }
 
@@ -250,7 +251,7 @@ void inicializa(int *argc, char* argv[]){
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
   carregaParametros(argc, argv, &porta, &tamMaxMsg);
   
-  t = inicializaTransacao(tamMaxMsg, porta);
+  t = inicializaTransacao(tamMaxMsg, porta, tamJanela);
 
   timeout.tv_sec = TIMEOUT;
   timeout.tv_usec = 0;

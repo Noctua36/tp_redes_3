@@ -37,6 +37,7 @@ void estadoTermino(int*);
 int tamMaxMsg;
 transacao *t;
 short int porta;
+short int tamJanela;
 char host[TAM_HOST];
 int contaBytes = 0;
 //variaveis para o tempo
@@ -210,7 +211,7 @@ void inicializa(int *argc, char* argv[]){
   // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
   carregaParametros(argc, argv, host, &porta, nomeArquivo, &tamMaxMsg);
 
-  t = inicializaTransacao(tamMaxMsg, 0); // TODO: verificar se nao é porta inves de 0
+  t = inicializaTransacao(tamMaxMsg, 0, tamJanela); // TODO: verificar se nao é porta inves de 0
 
   strcpy(t->nomeArquivo, nomeArquivo);
   free(nomeArquivo);

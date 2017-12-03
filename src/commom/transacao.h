@@ -21,6 +21,7 @@ typedef struct transacao {
     int timeoutCount;
     int timedout;
     int numBlocoEsperado;
+    int tamJanela;
     int arquivoAberto;
     char* nomeArquivo;
     FILE* arquivo;
@@ -31,7 +32,7 @@ typedef struct transacao {
     char *mensagemErro;
 } transacao;
 
-transacao* inicializaTransacao(int, int);
+transacao* inicializaTransacao(int, int, int);
 void destroiTransacao();
 int validaMensagem(char*);
 int extraiCRCDaMensagem(char*);

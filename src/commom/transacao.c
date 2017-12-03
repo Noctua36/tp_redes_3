@@ -1,7 +1,7 @@
 #include "transacao.h"
 #include "crc.h"
 
-transacao* inicializaTransacao(int tamMaxMsg, int porta){
+transacao* inicializaTransacao(int tamMaxMsg, int porta, int tamJanela){
   transacao *t = malloc(sizeof *t);
 
   t->socketFd = 0;
@@ -9,6 +9,7 @@ transacao* inicializaTransacao(int tamMaxMsg, int porta){
   t->timeoutCount = 0;
   t->timedout = 0;
   t->numBlocoEsperado = 1;
+  t->tamJanela = tamJanela;
   t->arquivoAberto = 0;
   t->posicaoArquivo = 0;
   t->tamBufferArquivo = 0;
