@@ -1,5 +1,6 @@
 #include "transacao.h"
 #include "crc.h"
+#include <string.h>
 
 transacao* inicializaTransacao(int tamMaxMsg, int porta, int tamJanela){
   transacao *t = malloc(sizeof *t);
@@ -51,11 +52,16 @@ void destroiTransacao(transacao *t){
 
 // verifica se mensagem é valida a partir da verificação do crc recebido
 int validaMensagem(char *msg){
-  int crcRecebido = extraiCRCDaMensagem(msg);
-  int crcCalc = calculaCRC(msg);
+  uint32_t crcRecebido = extraiCRCDaMensagem(msg);
+  uint32_t crcCalc = calculaCRC(msg, strlen(msg));
   return crcCalc == crcRecebido;
 }
 
-int extraiCRCDaMensagem(char *msg){
-  return 10; //TODO: implementar
+uint32_t extraiCRCDaMensagem(char *msg){
+  int i;
+  char crc[8];
+  for (i = 0; i < 7; i++)
+    crc[i] = msg[i];
+    msg[0] = msg[8];
+  return atoi(crc); //TODO: implementar
 }

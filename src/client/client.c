@@ -27,7 +27,7 @@ void aguardaEnter();
 long getTime();
 long timeDiff(long, long);
 void inicializa(int*, char**);
-void carregaParametros(int*, char**,  char*, short int*, char*, int*);
+void carregaParametros(int*, char**,  char*, short int*, char*, int*, short int*);
 void estadoEnviaReq(int*);
 void estadoRecebeArq(int*);
 void estadoErro(int*);
@@ -209,7 +209,7 @@ void estadoTermino(int *operacao){
 void inicializa(int *argc, char* argv[]){
   char *nomeArquivo = calloc(TAM_NOME_ARQUIVO, sizeof nomeArquivo);
   // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
-  carregaParametros(argc, argv, host, &porta, nomeArquivo, &tamMaxMsg);
+  carregaParametros(argc, argv, host, &porta, nomeArquivo, &tamMaxMsg, &tamJanela);
 
   t = inicializaTransacao(tamMaxMsg, 0, tamJanela); // TODO: verificar se nao é porta inves de 0
 
@@ -230,14 +230,14 @@ void inicializa(int *argc, char* argv[]){
 }
 
 // UTIL
-void carregaParametros(int* argc, char** argv, char* host, short int* porta, char* arquivo, int* tamBuffer){
+void carregaParametros(int* argc, char** argv, char* host, short int* porta, char* arquivo, int* tamBuffer, short int* tamJanela){
   #ifdef DEBUG
     printf("[DEBUG] numero de parametros recebidos: %d\n", *argc);
   #endif
   char *ultimoCaractere;
   // verifica se programa foi chamado com argumentos corretos
-  if (*argc != 5){
-    fprintf(stderr, "ERRO-> parametros invalidos! Uso: %s [host] [porta] [nome_arquivo] [tam_buffer]\n", argv[0]);
+  if (*argc != 6){
+    fprintf(stderr, "ERRO-> parametros invalidos! Uso: %s [host] [porta] [nome_arquivo] [tam_buffer] [tam_janela]\n", argv[0]);
     exit(EXIT_FAILURE);
   } 
   else {
@@ -254,10 +254,12 @@ void carregaParametros(int* argc, char** argv, char* host, short int* porta, cha
   strcpy(host, argv[1]);
 
   memset(arquivo, '\0', TAM_NOME_ARQUIVO);
-  strcpy(arquivo, argv[3]);;
+  strcpy(arquivo, argv[3]);
+
+  *tamJanela = atoi(argv[5]);
   
   #ifdef DEBUG
-    printf("[DEBUG] Parametros recebidos-> host: %s porta: %d nome_arquivo: %s tamBuffer: %d\n", host, *porta, arquivo, *tamBuffer);
+    printf("[DEBUG] Parametros recebidos-> host: %s porta: %d nome_arquivo: %s tamBuffer: %d tamJanela: %d\n", host, *porta, arquivo, *tamBuffer, *tamJanela);
   #endif
 }
 

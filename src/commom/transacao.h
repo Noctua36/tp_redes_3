@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <arpa/inet.h>
 #include "tp_socket.h"
 #include "pacote.h"
@@ -35,6 +36,6 @@ typedef struct transacao {
 transacao* inicializaTransacao(int, int, int);
 void destroiTransacao();
 int validaMensagem(char*);
-int extraiCRCDaMensagem(char*);
+uint32_t extraiCRCDaMensagem(char*);
 
 #endif /* _TRANSACAO_H_ */
