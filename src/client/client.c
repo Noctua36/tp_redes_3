@@ -13,6 +13,12 @@
 #include "../commom/transacao.h"
 
 #define DEBUG
+#define IMPRIME_DADOS_DO_PACOTE
+#define STEP
+
+#ifdef STEP
+void aguardaEnter();
+#endif
 
 #define TAM_PORTA 6
 #define TAM_NOME_ARQUIVO 32
@@ -20,6 +26,7 @@
 
 long getTime();
 long timeDiff(long, long);
+void inicializa(int*, char**);
 void carregaParametros(int*, char**,  char*, short int*, char*, int*);
 void estadoEnviaReq(int*);
 void estadoRecebeArq(int*);
@@ -27,14 +34,10 @@ void estadoErro(int*);
 void estadoEnviaAck(int*);      
 void estadoTermino(int*);
 
-// TODO: avaliar se buffer, tamMsg, sock.. podem ser transferidos para dentro da struct transacao
-int sock, tamMsg;
-pacote *envio;
+int tamMsg;
 transacao *t;
-char* buf; 
 short int porta;
 char host[TAM_HOST];
-so_addr *saddr;
 int contaBytes = 0;
 //variaveis para o tempo
 struct timeval inicio_tempo, fim_tempo;
@@ -43,31 +46,14 @@ double t_t0;
 double t_tf;
 
 int main(int argc, char* argv[]){
-  char nomeArquivo[TAM_NOME_ARQUIVO];
+  printf("Cliente iniciado\n");
+  //inicializa programa: carrega parâmetros, inicializa variáveis, aloca memória...
+  inicializa(&argc, argv);
   
   // double comeco, duracao;
-
-  // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
-  carregaParametros(&argc, argv, host, &porta, nomeArquivo, &tamMsg);
-
-  // aloca memória para buffer
-  buf = calloc(tamMsg, sizeof *buf);
-  if (buf == NULL){
-    perror("Falha ao alocar memoria para buffer.");
-    exit(EXIT_FAILURE);
-  }
-
-  saddr = malloc(sizeof(so_addr));
-
-  // chamada de função de inicialização para ambiente de testes
-  tp_init();
-
   int estadoAtual = ESTADO_ENVIA_REQ;
   int operacao; 
-
-  envio = criaPacoteVazio(tamMsg);
-  t = criaTransacaoVazia(tamMsg);
-  strcpy(t->nomeArquivo, nomeArquivo);
+  // opera FSM que rege o comportamento do sistema
   while(1){
     switch(estadoAtual){
       case ESTADO_ENVIA_REQ:
@@ -84,12 +70,11 @@ int main(int argc, char* argv[]){
         break;
       case ESTADO_TERMINO:
         estadoTermino(&operacao);
-      break;
+        break;
     }
     transita(&estadoAtual, &operacao);
   }
 
-  free(saddr);
   exit(EXIT_SUCCESS);
 }
 
@@ -98,91 +83,72 @@ void estadoEnviaReq(int *operacao){
     printf("\n[FSM] ENVIA_REQ\n");
   #endif
   int status;
-  // TODO: verificar possibilidade de criar pacote 'envio', enviar e excluí-lo aqui dentro desta função
-  envio->opcode = (uint8_t)REQ;
-  strcpy(envio->nomeArquivo, t->nomeArquivo);
-  montaMensagemPeloPacote(buf, envio);
 
-  // cria socket
-  sock = tp_socket(0);
-  
-  #ifdef DEBUG
-    printf("\n[DEBUG] socket: %d, tamMsg: %d\n", sock, tamMsg);
-    imprimeBuffer(buf);
-  #endif
+  t->envio = criaPacoteVazio();  
+  t->envio->opcode = (uint8_t)REQ;
+  strcpy(t->envio->nomeArquivo, t->nomeArquivo);
+  montaMensagemPeloPacote(t->buf, t->envio);
 
   // forma endereço para envio do pacote ao servidor
-  if (tp_build_addr(saddr, host, porta) < 0){
+  if (tp_build_addr(&t->toAddr, host, porta) < 0){
       perror("Erro no envio do pacote de requisicao de arquivo");
       // TODO: tratar erro
   }
-  // iniciar a contagem do tempo
-  gettimeofday(&inicio_tempo , NULL);
-
-  //envia requisição ao servidor
-  status = tp_sendto(sock, buf, strlen(buf), saddr);
-
-  // inserir verificação se foi final do arquivo
 
   #ifdef DEBUG
-    printf("\n[DEBUG] status: %d\n", status);
+    printf("[DEBUG] Pacote a ser enviado:\n");
+    imprimePacote(t->envio, 0);
   #endif
+  #ifdef STEP
+    aguardaEnter();
+  #endif
+  //envia requisição ao servidor
+  status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
+
   // verifica estado do envio
   if (status > 0) {
     *operacao = OPERACAO_OK;
   } else {
     *operacao = OPERACAO_NOK;
   }
-  destroiPacote(envio);
+  destroiPacote(t->envio);
 }
 
 void estadoRecebeArq(int *operacao){
     #ifdef DEBUG
-        printf("\n[FSM] RECEBE_ARQ\n");
+      printf("\n[FSM] RECEBE_ARQ\n");
     #endif
     
     int bytesRecebidos = 0;
-    bytesRecebidos = tp_recvfrom(sock, buf, tamMsg, saddr);
-    contaBytes += bytesRecebidos;
-    pacote *recebido = criaPacoteVazio();
-    montaPacotePelaMensagem(recebido, buf);
+    bytesRecebidos = tp_recvfrom(t->socketFd, t->buf, tamMsg, &t->toAddr);
+    // contaBytes += bytesRecebidos;
+    montaPacotePelaMensagem(t->recebido, t->buf);
     
     #ifdef DEBUG
       printf("Pacote recebido:\n");
-      imprimePacote(recebido, 1);
+      imprimePacote(t->recebido, 1);
     #endif
 
-  if (recebido->opcode == (uint8_t)DADOS) 
-   {
-     if (!t->arquivoAberto)
-     {
+  if(t->recebido->opcode == (uint8_t)DADOS){
+    // verifica se bloco é o esperado
+    if(t->recebido->numBloco != t->numBlocoEsperado){
+      // ignora mensagem
+      *operacao = OPERACAO_IGNORA;
+      return;
+    }
+    if(!t->arquivoAberto){
        t->arquivo = abreArquivoParaEscrita(t->nomeArquivo);
-       t->arquivoAberto = t->arquivo != NULL ;
-      
-     }
-     
-     escreveBytesEmArquivo(recebido->dados, t->arquivo , tamMsg - sizeof(recebido->opcode) - sizeof(recebido->numBloco));
-     
-   }
-   if (recebido->opcode == (uint8_t)FIM)
-   {
-    
-    
-    fechaArquivo( t->arquivo);
-
-    gettimeofday(&fim_tempo , NULL);
-    t_t0 = (double)inicio_tempo.tv_sec+(double)inicio_tempo.tv_usec/1000000;
-    t_tf = (double)fim_tempo.tv_sec+(double)fim_tempo.tv_usec/1000000;
-    t_total = t_tf - t_t0;
-    #ifdef DEBUG
-    
-    #endif
-    //TODO: LIBERAR TODAS AS MEMORIAS
-    printf("Buffer %5u bytes, %0.2lf kbps (%u bytes em %3.6lf s)\n", tamMsg, ((double)contaBytes*8)/(1000*t_total), contaBytes, t_total);
-
-    exit(EXIT_SUCCESS);
-   }
-  //destroiPacote(recebido);
+       t->arquivoAberto = t->arquivo != NULL;
+    }     
+    escreveBytesEmArquivo(t->recebido->dados, t->arquivo , tamMsg - sizeof(t->recebido->opcode) - sizeof(t->recebido->numBloco));
+    *operacao = OPERACAO_OK;
+    t->numBlocoEsperado++;
+    return;
+  }
+  if (t->recebido->opcode == (uint8_t)FIM){
+    fechaArquivo(t->arquivo);
+    *operacao = OPERACAO_TERMINO_ARQ;
+  }
 }
 
 void estadoErro(int *operacao){
@@ -192,30 +158,34 @@ void estadoErro(int *operacao){
 }
 
 void estadoEnviaAck(int *operacao){
-  int status;
-  
   #ifdef DEBUG
     printf("\n[FSM] ENVIA_ACK\n");
   #endif
-  //envio = criaPacoteVazio();
-  envio->opcode = (uint8_t)ACK;
-  envio->numBloco = t->numBloco ++;
-  montaMensagemPeloPacote(buf, envio);
   
-  status = tp_sendto(sock, buf, strlen(buf), saddr);
+  int status;
+  t->envio = criaPacoteVazio(tamMsg);
+  t->envio->opcode = (uint8_t)ACK;
+  t->envio->numBloco = t->numBloco++;
+  montaMensagemPeloPacote(t->buf, t->envio);
 
   #ifdef DEBUG
-  printf("\n[DEBUG] status: %d\n", status);
-  printf("\n[DEBUG] socket: %d, tamMsg: %d\n", sock, tamMsg);
-  //imprimeBuffer(buf);
+    printf("[DEBUG] Pacote a ser enviado:\n");
+    imprimePacote(t->envio, 0);
   #endif
+  #ifdef STEP
+    aguardaEnter();
+  #endif
+
+  status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
+
   // verifica estado do envio
   if (status > 0) {
-  *operacao = OPERACAO_OK;
-  } else {
-  *operacao = OPERACAO_NOK;
+    *operacao = OPERACAO_OK;
+  } 
+  else {
+    *operacao = OPERACAO_NOK;
   }
-  destroiPacote(envio);
+  destroiPacote(t->envio);
 }
 
 void estadoTermino(int *operacao){
@@ -224,6 +194,28 @@ void estadoTermino(int *operacao){
   #endif
   printf("Saindo...\n");
   exit(EXIT_SUCCESS);
+}
+
+void inicializa(int *argc, char* argv[]){
+  char *nomeArquivo = calloc(TAM_NOME_ARQUIVO, sizeof nomeArquivo);
+  // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
+  carregaParametros(argc, argv, host, &porta, nomeArquivo, &tamMsg);
+
+  t = criaTransacaoVazia(tamMsg, 0); // TODO: verificar se nao é porta inves de 0
+
+  strcpy(t->nomeArquivo, nomeArquivo);
+
+  // aloca memória para buffer
+  t->buf = calloc(tamMsg, sizeof t->buf);
+  if (t->buf == NULL){
+    perror("Falha ao alocar memoria para buffer.");
+    exit(EXIT_FAILURE);
+  }
+
+  // chamada de função de inicialização para ambiente de testes
+  tp_init();
+ 
+  free(nomeArquivo);
 }
 
 // UTIL
@@ -251,7 +243,7 @@ void carregaParametros(int* argc, char** argv, char* host, short int* porta, cha
   strcpy(host, argv[1]);
 
   memset(arquivo, '\0', TAM_NOME_ARQUIVO);
-  strcpy(arquivo, argv[3]);
+  strcpy(arquivo, argv[3]);;
   
   #ifdef DEBUG
     printf("[DEBUG] Parametros recebidos-> host: %s porta: %d nome_arquivo: %s tamBuffer: %d\n", host, *porta, arquivo, *tamBuffer);
@@ -274,3 +266,10 @@ long timeDiff(long start, long end){
   }
   return temp;
 }
+
+#ifdef STEP
+void aguardaEnter(){
+  printf("pressione Enter para continuar...");
+  while (getchar() != '\n');
+}
+#endif

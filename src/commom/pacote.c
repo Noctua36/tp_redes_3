@@ -60,6 +60,7 @@ void montaPacotePelaMensagem(pacote *p, char *b){
       carregaNumeroDoBloco(p, b);
       break;
     case DADOS:
+      carregaNumeroDoBloco(p, b);
       carregaDados(p, b);
       break;
     case ERRO:

@@ -23,6 +23,9 @@ void transita(int *estado, int *operacao){
 
     case ESTADO_RECEBE_ARQ:
       switch (*operacao){
+        case OPERACAO_IGNORA:
+          *estado = ESTADO_RECEBE_ARQ;
+          break;
         case OPERACAO_TERMINO_ARQ:
           *estado = ESTADO_TERMINO;
           break;

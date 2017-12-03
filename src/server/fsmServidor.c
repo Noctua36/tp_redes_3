@@ -45,7 +45,7 @@ void transita(int *estado, int *operacao){
         case OPERACAO_OK:
           *estado = ESTADO_AGUARDA_ACK;
           break;
-        case OPERACAO_TERMINO:
+        case OPERACAO_TERMINO_ARQ:
           *estado = ESTADO_TERMINO;
           break;
         default:

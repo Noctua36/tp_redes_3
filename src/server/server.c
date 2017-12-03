@@ -45,7 +45,6 @@ int main(int argc, char* argv[]){
   
   int estadoAtual = ESTADO_STANDBY;
   int operacao;
-
   // opera FSM que rege o comportamento do sistema
   while(1){
     switch(estadoAtual){
@@ -63,6 +62,7 @@ int main(int argc, char* argv[]){
         break;
       case ESTADO_RESETA:
         estadoReseta(&operacao);
+        break;
       case ESTADO_TERMINO:
         estadoTermino(&operacao);
       break;
@@ -90,14 +90,6 @@ void estadoStandBy(int *operacao){
     // strcpy(t->mensagemErro, MSG_ERRO_OP_ILEGAL);
     *operacao = OPERACAO_IGNORA;
   }
-  
-
-  // if ((opCode)t->recebido->opcode == (u_int8_t)REQ)
-  //   *operacao = OPERACAO_REQ_RECEBIDA;
-  // else {
-  //   t->codErro = (uint8_t)COD_ERRO_OP_ILEGAL;
-  //   *operacao = OPERACAO_NOK;
-  // }
 }
 
 void estadoEnvia(int *operacao){
@@ -117,6 +109,11 @@ void estadoEnvia(int *operacao){
       t->arquivoAberto = 1;
   } 
 
+  // verifica se arquivo já chegou ao fim
+  if(feof(t->arquivo)){
+    *operacao = OPERACAO_TERMINO_ARQ;
+    return;
+  }
   t->envio = criaPacoteVazio();
     
   // cria pacote para envio
@@ -130,17 +127,14 @@ void estadoEnvia(int *operacao){
     imprimePacote(t->envio, 1);
   #endif
   #ifdef STEP
-  aguardaEnter();
+    aguardaEnter();
   #endif
   // envia parte do arquivo
   int status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
   if (status > 0) {
-    // verifica se chegou ao fim do arquivo
-    if(feof(t->arquivo))
-      *operacao = OPERACAO_TERMINO;
-    else
-      *operacao = OPERACAO_OK;
-  } else {
+    *operacao = OPERACAO_OK;
+  } 
+  else {
     *operacao = OPERACAO_NOK;
   }
   destroiPacote(t->envio);
@@ -168,7 +162,8 @@ void estadoReseta(int *operacao){
     printf("\n[FSM] RESETA\n");
   #endif
   destroiTransacao(t);
-  t = criaTransacaoVazia(tamMsg);
+  t = criaTransacaoVazia(tamMsg, porta);
+  *operacao = OPERACAO_OK;
 }
 
 void estadoErro(int *operacao){
@@ -181,13 +176,21 @@ void estadoTermino(int *operacao){
   #ifdef DEBUG
     printf("\n[FSM] TERMINO\n");
   #endif
-
   t->envio = criaPacoteVazio();
-  t->envio->opcode = FIM;
+  t->envio->opcode = (uint8_t)FIM;
+  montaMensagemPeloPacote(t->buf, t->envio);
+  #ifdef DEBUG
+    printf("[DEBUG] Pacote a ser enviado:\n");
+    imprimePacote(t->envio, 0);
+  #endif
+  #ifdef STEP
+    aguardaEnter();
+  #endif
   int status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
   if (status > 0) {
     *operacao = OPERACAO_OK;
   }
+  //TODO: tratar erro
   destroiPacote(t->envio);
 }
 
@@ -228,28 +231,14 @@ void inicializa(int *argc, char* argv[]){
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
   carregaParametros(argc, argv, &porta, &tamMsg);
   
-  t = criaTransacaoVazia(tamMsg);
+  t = criaTransacaoVazia(tamMsg, porta);
 
-  // aloca memória para buffer
-  t->buf = calloc(tamMsg, sizeof *t->buf);
-  if (t->buf == NULL){
-    perror("Falha ao alocar memoria para buffer.");
-    fflush(stdout);
-    exit(EXIT_FAILURE);
-  }
- 
   timeout.tv_sec = TIMEOUT;
   timeout.tv_usec = 0;
 
   // chamada de função de inicialização para ambiente de testes
   tp_init();
- 
-  // cria socket e armazena o respectivo file descriptor
-  t->socketFd = tp_socket(porta);
-
-  t->recebido = criaPacoteVazio();
-
-}
+ }
 
 // UTIL
 void carregaParametros(int* argc, char** argv, short int* porta, int* tamBuffer){
