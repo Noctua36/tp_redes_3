@@ -23,10 +23,11 @@ transacao* inicializaTransacao(int tamMaxMsg, int porta, int tamJanela){
 
   t->mensagemErro = calloc(TAM_MSG_ERRO, sizeof(t->mensagemErro));
   t->nomeArquivo = calloc(TAM_NOME_ARQUIVO, sizeof(t->nomeArquivo));
-  t->buf = calloc(tamMaxMsg, sizeof t->buf);
-  t->janelaDeslizante = malloc(sizeof t->janelaDeslizante);
+  t->bufEnvio = calloc(tamMaxMsg, sizeof t->bufEnvio);
+  t->bufRecebimento = calloc(tamMaxMsg, sizeof t->bufRecebimento);
+  // t->janelaDeslizante = malloc(sizeof t->janelaDeslizante);
 
-  if (t == NULL || t->nomeArquivo == NULL || t->mensagemErro == NULL || t->buf == NULL){
+  if (t == NULL || t->nomeArquivo == NULL || t->mensagemErro == NULL || t->bufRecebimento == NULL || t->bufEnvio == NULL){
       perror("Falha ao alocar memoria para transacao.");
       exit(EXIT_FAILURE);
   }
@@ -56,7 +57,8 @@ void destroiTransacao(transacao *t){
   close(t->socketFd);
   free(t->mensagemErro);
   free(t->nomeArquivo);
-  free(t->buf);
+  free(t->bufEnvio);
+  free(t->bufRecebimento);
   esvaziaLista(t->janelaDeslizante);
   free(t->janelaDeslizante);
   free(t);

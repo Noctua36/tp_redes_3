@@ -9,7 +9,7 @@ typedef struct nodulo {
   struct nodulo *proximo;
 } nodulo;
 
-void push(nodulo*, pacote*);
+void push(nodulo**, pacote*);
 pacote* pop(nodulo**);
 void esvaziaLista(nodulo*);
 

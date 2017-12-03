@@ -13,8 +13,8 @@
 #include "../commom/transacao.h"
 
 #define DEBUG
-//#define IMPRIME_DADOS_DO_PACOTE
-//#define STEP
+// #define IMPRIME_DADOS_DO_PACOTE
+// #define STEP
 
 #ifdef STEP
 void aguardaEnter();
@@ -88,7 +88,7 @@ void estadoEnviaReq(int *operacao){
   t->envio = criaPacoteVazio();  
   t->envio->opcode = (uint8_t)REQ;
   strcpy(t->envio->nomeArquivo, t->nomeArquivo);
-  montaMensagemPeloPacote(t->buf, t->envio);
+  montaMensagemPeloPacote(t->bufEnvio, t->envio);
 
   // forma endereço para envio do pacote ao servidor
   if (tp_build_addr(&t->toAddr, host, porta) < 0){
@@ -104,7 +104,7 @@ void estadoEnviaReq(int *operacao){
     aguardaEnter();
   #endif
   //envia requisição ao servidor
-  status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
+  status = tp_sendto(t->socketFd, t->bufEnvio, tamMaxMsg, &t->toAddr);
 
   // verifica estado do envio
   if (status > 0){
@@ -122,9 +122,9 @@ void estadoRecebeArq(int *operacao){
     #endif
     
     int bytesRecebidos = 0;
-    bytesRecebidos = tp_recvfrom(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
+    bytesRecebidos = tp_recvfrom(t->socketFd, t->bufRecebimento, tamMaxMsg, &t->toAddr);
     // contaBytes += bytesRecebidos;
-    montaPacotePelaMensagem(t->recebido, t->buf, bytesRecebidos);
+    montaPacotePelaMensagem(t->recebido, t->bufRecebimento, bytesRecebidos);
     
     #ifdef DEBUG
       printf("Pacote recebido:\n");
@@ -175,8 +175,8 @@ void estadoEnviaAck(int *operacao){
   int status;
   t->envio = criaPacoteVazio(tamMaxMsg);
   t->envio->opcode = (uint8_t)ACK;
-  t->envio->numBloco++;
-  montaMensagemPeloPacote(t->buf, t->envio);
+  t->envio->numBloco = t->recebido->numBloco + 1;
+  montaMensagemPeloPacote(t->bufEnvio, t->envio);
 
   #ifdef DEBUG
     printf("[DEBUG] Pacote a ser enviado:\n");
@@ -186,7 +186,7 @@ void estadoEnviaAck(int *operacao){
     aguardaEnter();
   #endif
 
-  status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
+  status = tp_sendto(t->socketFd, t->bufEnvio, tamMaxMsg, &t->toAddr);
 
   // verifica estado do envio
   if (status > 0){
@@ -216,17 +216,8 @@ void inicializa(int *argc, char* argv[]){
   strcpy(t->nomeArquivo, nomeArquivo);
   free(nomeArquivo);
   
-  // aloca memória para buffer
-  t->buf = calloc(tamMaxMsg, sizeof t->buf);
-  if (t->buf == NULL){
-    perror("Falha ao alocar memoria para buffer.");
-    exit(EXIT_FAILURE);
-  }
-
   // chamada de função de inicialização para ambiente de testes
   tp_init();
- 
-  
 }
 
 // UTIL

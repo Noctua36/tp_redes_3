@@ -16,7 +16,8 @@ typedef struct transacao {
     int socketFd;
     int cargaUtilPacoteDados;
     struct sockaddr_in toAddr;
-    char* buf;
+    char* bufEnvio;
+    char* bufRecebimento;
     pacote *recebido;
     pacote *envio;
     int timedoutCount;
