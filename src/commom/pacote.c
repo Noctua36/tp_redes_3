@@ -11,9 +11,9 @@
 pacote* criaPacoteVazio(){
   int cargaUtil = tamMsg - sizeof(uint8_t) - sizeof(uint16_t);
   pacote *p = malloc(sizeof *p);
-  p->nomeArquivo = malloc(TAM_NOME_ARQUIVO * sizeof(char));
-  p->dados = malloc(cargaUtil * sizeof(char));
-  p->mensagemErro = malloc(TAM_MSG_ERRO * sizeof(char));
+  p->nomeArquivo = calloc(TAM_NOME_ARQUIVO, sizeof(p->nomeArquivo));
+  p->dados = calloc(cargaUtil, sizeof(p->dados));
+  p->mensagemErro = calloc(TAM_MSG_ERRO, sizeof(p->mensagemErro));
 
   if (p == NULL || p->nomeArquivo == NULL || p->dados == NULL || p->mensagemErro == NULL) {
     perror("Falha ao alocar memoria para pacote.");
@@ -40,7 +40,7 @@ void limpaPacote(pacote *p){
   memset(p->mensagemErro, 0, TAM_MSG_ERRO);
   memset(p->nomeArquivo, 0, TAM_NOME_ARQUIVO);
   memset(p->dados, 0, cargaUtil);
-  p-> numBloco = (uint16_t)0;
+  p->numBloco = (uint16_t)0;
 }
 
 // extrai dados do buffer e os organiza na estrutura do pacote

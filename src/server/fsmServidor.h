@@ -15,6 +15,7 @@
 #define OPERACAO_ABANDONA     3
 #define OPERACAO_REQ_RECEBIDA 4
 #define OPERACAO_TERMINO      5
+#define OPERACAO_IGNORA       6
 
 void transita(int *estado, int *operacao);
 

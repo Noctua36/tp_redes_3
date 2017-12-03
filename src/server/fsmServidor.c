@@ -12,6 +12,9 @@ void transita(int *estado, int *operacao){
         case OPERACAO_ABANDONA:
           *estado = ESTADO_RESETA;
           break;
+        case OPERACAO_IGNORA:
+          *estado = ESTADO_STANDBY;
+          break;
         default:
           *estado = ESTADO_ERRO;
       }

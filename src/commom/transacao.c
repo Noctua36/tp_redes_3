@@ -1,13 +1,13 @@
 #include "transacao.h"
 #include "crc.h"
 
-transacao* criaTransacaoVazia(){
+transacao* criaTransacaoVazia(int tamMsg){
   transacao *t = malloc(sizeof *t);
 
   t->socketFd = 0;
   // t->tamMsg = 0;
   // t->toAddr = NULL;
-  t->cargaUtilPacoteDados = (int)(sizeof(t->envio->opcode) - sizeof(t->envio->numBloco)); //TODO: adicionar CRC
+  t->cargaUtilPacoteDados = (int)(tamMsg - sizeof(t->envio->opcode) - sizeof(t->envio->numBloco)); //TODO: adicionar CRC
   t->timeoutCount = 0;
   t->timedout = 0;
   //t->envioCompleto = 0;
@@ -17,8 +17,8 @@ transacao* criaTransacaoVazia(){
   t->numBloco = (uint16_t)0;
   t->codErro = (uint8_t)SEM_ERRO;
 
-  t->mensagemErro = malloc(TAM_MSG_ERRO * sizeof(char));
-  t->nomeArquivo = malloc(TAM_NOME_ARQUIVO * sizeof(char));
+  t->mensagemErro = calloc(TAM_MSG_ERRO, sizeof(t->mensagemErro));
+  t->nomeArquivo = calloc(TAM_NOME_ARQUIVO, sizeof(t->nomeArquivo));
 
   if (t == NULL || t->nomeArquivo == NULL || t->mensagemErro == NULL) {
       perror("Falha ao alocar memoria para transacao.");

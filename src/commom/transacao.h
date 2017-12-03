@@ -31,7 +31,7 @@ typedef struct transacao {
     char *mensagemErro;
 } transacao;
 
-transacao* criaTransacaoVazia();
+transacao* criaTransacaoVazia(int);
 void destroiTransacao();
 int validaMensagem(char*);
 int extraiCRCDaMensagem(char*);

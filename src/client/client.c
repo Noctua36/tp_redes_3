@@ -51,7 +51,7 @@ int main(int argc, char* argv[]){
   carregaParametros(&argc, argv, host, &porta, nomeArquivo, &tamMsg);
 
   // aloca memória para buffer
-  buf = malloc(sizeof *buf * tamMsg);
+  buf = calloc(tamMsg, sizeof *buf);
   if (buf == NULL){
     perror("Falha ao alocar memoria para buffer.");
     exit(EXIT_FAILURE);
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]){
   int operacao; 
 
   envio = criaPacoteVazio(tamMsg);
-  t = criaTransacaoVazia();
+  t = criaTransacaoVazia(tamMsg);
   strcpy(t->nomeArquivo, nomeArquivo);
   while(1){
     switch(estadoAtual){

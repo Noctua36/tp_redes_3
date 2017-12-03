@@ -6,12 +6,12 @@
     {
       "label": "build server",
       "type": "shell",
-      "command": "cd ${workspaceRoot}/src/server/ && make"
+      "command": "cd ${workspaceRoot}/src/server/ && make clean && make"
     },
     {
       "label": "build client",
       "type": "shell",
-      "command": "cd ${workspaceRoot}/src/client/ && make"
+      "command": "cd ${workspaceRoot}/src/client/ && make clean && make"
     }
   ]
 }

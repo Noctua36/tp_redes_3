@@ -16,7 +16,7 @@
 #define DEBUG
 
 // protótipo das funções
-void inicializa(int, char**);
+void inicializa(int*, char**);
 void carregaParametros(int*, char**, short int*, int*);
 int recebePacoteEsperado(uint8_t);
 void limpaBuffer(char*, int);
@@ -33,8 +33,9 @@ transacao *t;
 struct timeval timeout;      
 
 int main(int argc, char* argv[]){
-  // inicializa programa: carrega parâmentros, inicializa variáveis, aloca memória...
-  inicializa(argc, argv);
+  printf("Inicio\n");
+  //inicializa programa: carrega parâmetros, inicializa variáveis, aloca memória...
+  inicializa(&argc, argv);
   
   int estadoAtual = ESTADO_STANDBY;
   int operacao;
@@ -68,11 +69,22 @@ int main(int argc, char* argv[]){
 
 void estadoStandBy(int *operacao){
   #ifdef DEBUG
-    printf("\n[FSM] STAND_BY\n");
+    printf("[FSM] STAND_BY\n");
     printf("Aguardando solicitacao...\n");
   #endif
  
-  *operacao = (opCode)recebePacoteEsperado(REQ);
+  if ((opCode)recebePacoteEsperado((u_int8_t)REQ)){
+    *operacao = OPERACAO_REQ_RECEBIDA;
+  } 
+  else {
+    #ifdef DEBUG
+      printf("Aguardando mensagem de requisicao de arquivo, porem recebido opcode %d.", t->recebido->opcode);
+    #endif
+    // t->codErro = COD_ERRO_OP_ILEGAL;
+    // strcpy(t->mensagemErro, MSG_ERRO_OP_ILEGAL);
+    *operacao = OPERACAO_IGNORA;
+  }
+  
 
   // if ((opCode)t->recebido->opcode == (u_int8_t)REQ)
   //   *operacao = OPERACAO_REQ_RECEBIDA;
@@ -103,7 +115,7 @@ void estadoEnvia(int *operacao){
     
   // cria pacote para envio
   t->envio->opcode = (uint8_t)DADOS;
-  t->envio->numBloco = t->numBloco++;
+  t->envio->numBloco++;
   leBytesDeArquivo(t->envio->dados, t->arquivo, t->cargaUtilPacoteDados);
   montaMensagemPeloPacote(t->buf, t->envio);
 
@@ -135,7 +147,7 @@ void estadoAguardaAck(int *operacao){
     return;
   }
   
-  *operacao = (opCode)recebePacoteEsperado(ACK);
+  *operacao = (opCode)recebePacoteEsperado((uint8_t)ACK);
 }
 
 void estadoReseta(int *operacao){
@@ -143,7 +155,7 @@ void estadoReseta(int *operacao){
     printf("\n[FSM] RESETA\n");
   #endif
   destroiTransacao(t);
-  t = criaTransacaoVazia();
+  t = criaTransacaoVazia(tamMsg);
 }
 
 void estadoErro(int *operacao){
@@ -172,15 +184,15 @@ int recebePacoteEsperado(uint8_t opCodeEsperado){
   if (bytesRecebidos == -1){
     perror("ERRO-> Falha no recebimento de mensagem.\n");
     //TODO: avaliar se cria msg de erro na transacao
-    return OPERACAO_NOK;
+    return 0;
   }
 
+  montaPacotePelaMensagem(t->recebido, t->buf);
   #ifdef DEBUG
     printf("Recebido mensagem:\n");
+    imprimeBuffer(t->buf);
     imprimePacote(t->recebido);
   #endif
-  
-  montaMensagemPeloPacote(t->buf, t->recebido);
 
   if (opCodeEsperado == t->recebido->opcode){
     if (t->recebido->opcode == DADOS){
@@ -191,25 +203,26 @@ int recebePacoteEsperado(uint8_t opCodeEsperado){
           printf("Mensagem corrompida recebida!\n");
         #endif
         // mensagem corrompida, apenas ignora, mantendo a FSM no mesmo estado
-        return OPERACAO_NOK;
+        return 0;
       }  
     }
     else
-      return OPERACAO_OK;
+      return 1;
   }
-  return OPERACAO_NOK;
+  return 0;
 }
 
-void inicializa(int argc, char* argv[]){
-  t = criaTransacaoVazia();
-
+void inicializa(int *argc, char* argv[]){
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
-  carregaParametros(&argc, argv, &porta, &tamMsg);
+  carregaParametros(argc, argv, &porta, &tamMsg);
   
+  t = criaTransacaoVazia(tamMsg);
+
   // aloca memória para buffer
-  t->buf = malloc(sizeof *t->buf * tamMsg);
+  t->buf = calloc(tamMsg, sizeof *t->buf);
   if (t->buf == NULL){
     perror("Falha ao alocar memoria para buffer.");
+    fflush(stdout);
     exit(EXIT_FAILURE);
   }
  
@@ -231,7 +244,7 @@ void carregaParametros(int* argc, char** argv, short int* porta, int* tamBuffer)
   char *ultimoCaractere;
   // verifica se programa foi chamado com argumentos corretos
   if (*argc != 3){
-    fprintf(stderr, "ERRO-> parametros invalidos! Uso: %s [porta] [tam_buffer]\n", argv[0]);
+    perror("ERRO-> parametros invalidos! Uso: %s [porta] [tam_buffer]\n");
     exit(EXIT_FAILURE);
   } 
   else {
