@@ -34,7 +34,7 @@ void estadoErro(int*);
 void estadoTermino(int*);
 
 short int porta;
-int tamMsg;
+int tamMaxMsg;
 transacao *t;
 struct timeval timeout;      
 
@@ -119,7 +119,8 @@ void estadoEnvia(int *operacao){
   // cria pacote para envio
   t->envio->opcode = (uint8_t)DADOS;
   t->envio->numBloco++;
-  leBytesDeArquivo(t->envio->dados, t->arquivo, t->cargaUtilPacoteDados);
+  int bytesArquivo = leBytesDeArquivo(t->envio->dados, t->arquivo, t->cargaUtilPacoteDados);
+  t->envio->cargaUtil = bytesArquivo;
   montaMensagemPeloPacote(t->buf, t->envio);
 
   #ifdef DEBUG
@@ -130,6 +131,7 @@ void estadoEnvia(int *operacao){
     aguardaEnter();
   #endif
   // envia parte do arquivo
+  int tamMsg = t->envio->cargaUtil + sizeof t->envio->opcode + sizeof t->envio->numBloco;
   int status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
   if (status > 0) {
     *operacao = OPERACAO_OK;
@@ -162,7 +164,7 @@ void estadoReseta(int *operacao){
     printf("\n[FSM] RESETA\n");
   #endif
   destroiTransacao(t);
-  t = criaTransacaoVazia(tamMsg, porta);
+  t = criaTransacaoVazia(tamMaxMsg, porta);
   *operacao = OPERACAO_OK;
 }
 
@@ -186,7 +188,7 @@ void estadoTermino(int *operacao){
   #ifdef STEP
     aguardaEnter();
   #endif
-  int status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
+  int status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
   if (status > 0) {
     *operacao = OPERACAO_OK;
   }
@@ -195,15 +197,15 @@ void estadoTermino(int *operacao){
 }
 
 int recebePacoteEsperado(uint8_t opCodeEsperado){
-  limpaBuffer(t->buf, tamMsg);
-  int bytesRecebidos = tp_recvfrom(t->socketFd, t->buf, tamMsg, &t->toAddr);                     
+  limpaBuffer(t->buf, tamMaxMsg);
+  int bytesRecebidos = tp_recvfrom(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);                     
   if (bytesRecebidos == -1){
     perror("ERRO-> Falha no recebimento de mensagem.\n");
     //TODO: avaliar se cria msg de erro na transacao
     return 0;
   }
 
-  montaPacotePelaMensagem(t->recebido, t->buf);
+  montaPacotePelaMensagem(t->recebido, t->buf, bytesRecebidos);
   #ifdef DEBUG
     printf("Recebido mensagem:\n");
     imprimePacote(t->recebido, 0);
@@ -229,9 +231,9 @@ int recebePacoteEsperado(uint8_t opCodeEsperado){
 
 void inicializa(int *argc, char* argv[]){
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
-  carregaParametros(argc, argv, &porta, &tamMsg);
+  carregaParametros(argc, argv, &porta, &tamMaxMsg);
   
-  t = criaTransacaoVazia(tamMsg, porta);
+  t = criaTransacaoVazia(tamMaxMsg, porta);
 
   timeout.tv_sec = TIMEOUT;
   timeout.tv_usec = 0;

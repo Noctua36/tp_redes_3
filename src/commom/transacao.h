@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <arpa/inet.h>
+#include "tp_socket.h"
 #include "pacote.h"
 
 #define TIMEOUT 200 // em segundos

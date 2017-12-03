@@ -4,14 +4,14 @@
 #include <string.h>
 #include <netinet/in.h>
 
-int tamMsg = 1024;
+int tamMaxMsg = 1024;
 
 int main(){
     pacote *p, *p2;
     p = criaPacoteVazio();
     p2 = criaPacoteVazio();
     char *b;
-    b = malloc(tamMsg * sizeof (char));
+    b = malloc(tamMaxMsg * sizeof (char));
     
     // teste pacote REQ
     printf("\nTeste REQ\n");
@@ -43,7 +43,7 @@ int main(){
     printf("\nTeste DADOS\n");
     limpaPacote(p);
     p->opcode = (uint8_t)DADOS;
-    int cargaUtil = tamMsg - sizeof(opCode) - sizeof(unsigned short);
+    int cargaUtil = tamMaxMsg - sizeof(opCode) - sizeof(unsigned short);
     for (int i = 0; i < cargaUtil; i++){
         p->dados[i] = 'a';
     }

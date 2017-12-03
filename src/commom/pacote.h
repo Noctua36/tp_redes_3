@@ -64,8 +64,8 @@ typedef enum codigoErro { SEM_ERRO, COD_ERRO_DESCONHECIDO, COD_ERRO_ARQUIVO_NAO_
 #define MSG_ERRO_VIOLACAO_ACESSO "Violação de acesso." 
 #define MSG_ERRO_OP_ILEGAL "Operação ilegal."
 
-// tamMsg deve ser definido no programa principal
-extern int tamMsg;
+// tamMaxMsg deve ser definido no programa principal
+extern int tamMaxMsg;
 
 // estrutura para armazenar dados do pacote
 // compilador que escolhe tipo de dados da enum. Por este motivo, opcode e codErro são declarados como unsigned char e não seus respectivos tipos de enum
@@ -73,6 +73,7 @@ typedef struct pacote {
   uint8_t opcode; 
   char* nomeArquivo;
   char* dados;
+  uint16_t cargaUtil;
   uint16_t numBloco;
   uint8_t codErro;
   char* mensagemErro;
@@ -89,8 +90,8 @@ void carregaNumeroDoBloco(pacote*, char*);
 void carregaCodigoErro(pacote*, char*);
 void carregaMensagemErro(pacote*, char*);
 
-void montaPacotePelaMensagem(pacote*, char*);
-void montaMensagemPeloPacote(char*, pacote*);
+void montaPacotePelaMensagem(pacote*, char*, int);
+int montaMensagemPeloPacote(char*, pacote*);
 
 #ifdef DEBUG
 void imprimeBuffer(char*);

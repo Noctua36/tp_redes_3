@@ -34,7 +34,7 @@ void estadoErro(int*);
 void estadoEnviaAck(int*);      
 void estadoTermino(int*);
 
-int tamMsg;
+int tamMaxMsg;
 transacao *t;
 short int porta;
 char host[TAM_HOST];
@@ -103,7 +103,7 @@ void estadoEnviaReq(int *operacao){
     aguardaEnter();
   #endif
   //envia requisição ao servidor
-  status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
+  status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
 
   // verifica estado do envio
   if (status > 0) {
@@ -120,9 +120,9 @@ void estadoRecebeArq(int *operacao){
     #endif
     
     int bytesRecebidos = 0;
-    bytesRecebidos = tp_recvfrom(t->socketFd, t->buf, tamMsg, &t->toAddr);
+    bytesRecebidos = tp_recvfrom(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
     // contaBytes += bytesRecebidos;
-    montaPacotePelaMensagem(t->recebido, t->buf);
+    montaPacotePelaMensagem(t->recebido, t->buf, bytesRecebidos);
     
     #ifdef DEBUG
       printf("Pacote recebido:\n");
@@ -140,7 +140,7 @@ void estadoRecebeArq(int *operacao){
        t->arquivo = abreArquivoParaEscrita(t->nomeArquivo);
        t->arquivoAberto = t->arquivo != NULL;
     }     
-    escreveBytesEmArquivo(t->recebido->dados, t->arquivo , tamMsg - sizeof(t->recebido->opcode) - sizeof(t->recebido->numBloco));
+    escreveBytesEmArquivo(t->recebido->dados, t->arquivo , t->recebido->cargaUtil);
     *operacao = OPERACAO_OK;
     t->numBlocoEsperado++;
     return;
@@ -163,7 +163,7 @@ void estadoEnviaAck(int *operacao){
   #endif
   
   int status;
-  t->envio = criaPacoteVazio(tamMsg);
+  t->envio = criaPacoteVazio(tamMaxMsg);
   t->envio->opcode = (uint8_t)ACK;
   t->envio->numBloco = t->numBloco++;
   montaMensagemPeloPacote(t->buf, t->envio);
@@ -176,7 +176,7 @@ void estadoEnviaAck(int *operacao){
     aguardaEnter();
   #endif
 
-  status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
+  status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
 
   // verifica estado do envio
   if (status > 0) {
@@ -199,14 +199,14 @@ void estadoTermino(int *operacao){
 void inicializa(int *argc, char* argv[]){
   char *nomeArquivo = calloc(TAM_NOME_ARQUIVO, sizeof nomeArquivo);
   // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
-  carregaParametros(argc, argv, host, &porta, nomeArquivo, &tamMsg);
+  carregaParametros(argc, argv, host, &porta, nomeArquivo, &tamMaxMsg);
 
-  t = criaTransacaoVazia(tamMsg, 0); // TODO: verificar se nao é porta inves de 0
+  t = criaTransacaoVazia(tamMaxMsg, 0); // TODO: verificar se nao é porta inves de 0
 
   strcpy(t->nomeArquivo, nomeArquivo);
 
   // aloca memória para buffer
-  t->buf = calloc(tamMsg, sizeof t->buf);
+  t->buf = calloc(tamMaxMsg, sizeof t->buf);
   if (t->buf == NULL){
     perror("Falha ao alocar memoria para buffer.");
     exit(EXIT_FAILURE);
