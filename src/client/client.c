@@ -54,7 +54,7 @@ int main(int argc, char* argv[]){
   int estadoAtual = ESTADO_ENVIA_REQ;
   int operacao; 
   // opera FSM que rege o comportamento do sistema
-  while(1){
+  while (1){
     switch(estadoAtual){
       case ESTADO_ENVIA_REQ:
         estadoEnviaReq(&operacao);
@@ -106,9 +106,10 @@ void estadoEnviaReq(int *operacao){
   status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
 
   // verifica estado do envio
-  if (status > 0) {
+  if (status > 0){
     *operacao = OPERACAO_OK;
-  } else {
+  } 
+  else {
     *operacao = OPERACAO_NOK;
   }
   destroiPacote(t->envio);
@@ -129,14 +130,14 @@ void estadoRecebeArq(int *operacao){
       imprimePacote(t->recebido, 1);
     #endif
 
-  if(t->recebido->opcode == (uint8_t)DADOS){
+  if (t->recebido->opcode == (uint8_t)DADOS){
     // verifica se bloco é o esperado
-    if(t->recebido->numBloco != t->numBlocoEsperado){
+    if (t->recebido->numBloco != t->numBlocoEsperado){
       // ignora mensagem
       *operacao = OPERACAO_IGNORA;
       return;
     }
-    if(!t->arquivoAberto){
+    if (!t->arquivoAberto){
        t->arquivo = abreArquivoParaEscrita(t->nomeArquivo);
        t->arquivoAberto = t->arquivo != NULL;
     }     
@@ -165,7 +166,7 @@ void estadoEnviaAck(int *operacao){
   int status;
   t->envio = criaPacoteVazio(tamMaxMsg);
   t->envio->opcode = (uint8_t)ACK;
-  t->envio->numBloco = t->numBloco++;
+  t->envio->numBloco++;
   montaMensagemPeloPacote(t->buf, t->envio);
 
   #ifdef DEBUG
@@ -179,7 +180,7 @@ void estadoEnviaAck(int *operacao){
   status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
 
   // verifica estado do envio
-  if (status > 0) {
+  if (status > 0){
     *operacao = OPERACAO_OK;
   } 
   else {
@@ -201,7 +202,7 @@ void inicializa(int *argc, char* argv[]){
   // alimenta numero da porta e tamanho do buffer pelos parametros recebidos
   carregaParametros(argc, argv, host, &porta, nomeArquivo, &tamMaxMsg);
 
-  t = criaTransacaoVazia(tamMaxMsg, 0); // TODO: verificar se nao é porta inves de 0
+  t = inicializaTransacao(tamMaxMsg, 0); // TODO: verificar se nao é porta inves de 0
 
   strcpy(t->nomeArquivo, nomeArquivo);
 
@@ -261,7 +262,8 @@ long timeDiff(long start, long end){
   long temp;
   if ((end - start) < 0){
     temp = 1000000000 + end - start;
-  } else {
+  } 
+  else {
     temp = end - start;
   }
   return temp;

@@ -46,7 +46,7 @@ int main(int argc, char* argv[]){
   int estadoAtual = ESTADO_STANDBY;
   int operacao;
   // opera FSM que rege o comportamento do sistema
-  while(1){
+  while (1){
     switch(estadoAtual){
       case ESTADO_STANDBY:
         estadoStandBy(&operacao);
@@ -100,7 +100,7 @@ void estadoEnvia(int *operacao){
   // verifica se arquivo já está aberto
   if (!t->arquivoAberto){
     t->arquivo = abreArquivoParaLeitura(t->recebido->nomeArquivo);
-    if(t->arquivo == NULL){
+    if (t->arquivo == NULL){
       t->codErro = (uint8_t)COD_ERRO_ARQUIVO_NAO_EXISTE; // TODO: diferenciar erros de permissão de leitura e de existância de arquivo
       *operacao = OPERACAO_NOK;
       return;
@@ -110,7 +110,7 @@ void estadoEnvia(int *operacao){
   } 
 
   // verifica se arquivo já chegou ao fim
-  if(feof(t->arquivo)){
+  if (feof(t->arquivo)){
     *operacao = OPERACAO_TERMINO_ARQ;
     return;
   }
@@ -133,7 +133,7 @@ void estadoEnvia(int *operacao){
   // envia parte do arquivo
   int tamMsg = t->envio->cargaUtil + sizeof t->envio->opcode + sizeof t->envio->numBloco;
   int status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
-  if (status > 0) {
+  if (status > 0){
     *operacao = OPERACAO_OK;
   } 
   else {
@@ -164,7 +164,7 @@ void estadoReseta(int *operacao){
     printf("\n[FSM] RESETA\n");
   #endif
   destroiTransacao(t);
-  t = criaTransacaoVazia(tamMaxMsg, porta);
+  t = inicializaTransacao(tamMaxMsg, porta);
   *operacao = OPERACAO_OK;
 }
 
@@ -189,7 +189,7 @@ void estadoTermino(int *operacao){
     aguardaEnter();
   #endif
   int status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
-  if (status > 0) {
+  if (status > 0){
     *operacao = OPERACAO_OK;
   }
   //TODO: tratar erro
@@ -215,7 +215,7 @@ int recebePacoteEsperado(uint8_t opCodeEsperado){
     if (t->recebido->opcode == DADOS){
       //TODO: verificar se verifica CRC apenas para mensagens do tipo DADOS
       int msgIntegra = validaMensagem(t->buf);
-      if(!msgIntegra){
+      if (!msgIntegra){
         #ifdef DEBUG
           printf("Mensagem corrompida recebida!\n");
         #endif
@@ -233,7 +233,7 @@ void inicializa(int *argc, char* argv[]){
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
   carregaParametros(argc, argv, &porta, &tamMaxMsg);
   
-  t = criaTransacaoVazia(tamMaxMsg, porta);
+  t = inicializaTransacao(tamMaxMsg, porta);
 
   timeout.tv_sec = TIMEOUT;
   timeout.tv_usec = 0;

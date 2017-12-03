@@ -16,7 +16,7 @@ pacote* criaPacoteVazio(){
   p->dados = calloc(cargaUtilMax, sizeof(p->dados));
   p->mensagemErro = calloc(TAM_MSG_ERRO, sizeof(p->mensagemErro));
 
-  if (p == NULL || p->nomeArquivo == NULL || p->dados == NULL || p->mensagemErro == NULL) {
+  if (p == NULL || p->nomeArquivo == NULL || p->dados == NULL || p->mensagemErro == NULL){
     perror("Falha ao alocar memoria para pacote.");
     exit(EXIT_FAILURE);
   }
@@ -174,7 +174,7 @@ void imprimePacote(pacote *p, int imprimeDados){
   printf("nomeArquivo: %s\n", p->nomeArquivo);
   printf("cargaUtil: %d\n", p->cargaUtil);
   printf("dados: ");
-  if(imprimeDados)
+  if (imprimeDados)
     imprimeBuffer(p->dados);
   else
     printf("<ocultado>");

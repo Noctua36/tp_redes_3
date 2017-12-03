@@ -1,7 +1,7 @@
 #include "transacao.h"
 #include "crc.h"
 
-transacao* criaTransacaoVazia(int tamMaxMsg, int porta){
+transacao* inicializaTransacao(int tamMaxMsg, int porta){
   transacao *t = malloc(sizeof *t);
 
   t->socketFd = 0;
@@ -19,7 +19,7 @@ transacao* criaTransacaoVazia(int tamMaxMsg, int porta){
   t->nomeArquivo = calloc(TAM_NOME_ARQUIVO, sizeof(t->nomeArquivo));
   t->buf = calloc(tamMaxMsg, sizeof t->buf);
   
-  if (t == NULL || t->nomeArquivo == NULL || t->mensagemErro == NULL || t->buf == NULL) {
+  if (t == NULL || t->nomeArquivo == NULL || t->mensagemErro == NULL || t->buf == NULL){
       perror("Falha ao alocar memoria para transacao.");
       exit(EXIT_FAILURE);
   }
