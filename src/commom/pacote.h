@@ -94,7 +94,7 @@ void montaMensagemPeloPacote(char*, pacote*);
 
 #ifdef DEBUG
 void imprimeBuffer(char*);
-void imprimePacote(pacote*);
+void imprimePacote(pacote*, int);
 #endif
 
 #endif /* _PACOTE_H_ */

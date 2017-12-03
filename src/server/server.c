@@ -14,6 +14,12 @@
 #include "fsmServidor.h"
 
 #define DEBUG
+#define IMPRIME_DADOS_DO_PACOTE
+#define STEP
+
+#ifdef STEP
+void aguardaEnter();
+#endif
 
 // protótipo das funções
 void inicializa(int*, char**);
@@ -69,7 +75,7 @@ int main(int argc, char* argv[]){
 
 void estadoStandBy(int *operacao){
   #ifdef DEBUG
-    printf("[FSM] STAND_BY\n");
+    printf("\n[FSM] STAND_BY\n");
     printf("Aguardando solicitacao...\n");
   #endif
  
@@ -119,6 +125,13 @@ void estadoEnvia(int *operacao){
   leBytesDeArquivo(t->envio->dados, t->arquivo, t->cargaUtilPacoteDados);
   montaMensagemPeloPacote(t->buf, t->envio);
 
+  #ifdef DEBUG
+    printf("[DEBUG] Pacote a ser enviado:\n");
+    imprimePacote(t->envio, 1);
+  #endif
+  #ifdef STEP
+  aguardaEnter();
+  #endif
   // envia parte do arquivo
   int status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
   if (status > 0) {
@@ -190,8 +203,7 @@ int recebePacoteEsperado(uint8_t opCodeEsperado){
   montaPacotePelaMensagem(t->recebido, t->buf);
   #ifdef DEBUG
     printf("Recebido mensagem:\n");
-    imprimeBuffer(t->buf);
-    imprimePacote(t->recebido);
+    imprimePacote(t->recebido, 0);
   #endif
 
   if (opCodeEsperado == t->recebido->opcode){
@@ -264,3 +276,10 @@ void carregaParametros(int* argc, char** argv, short int* porta, int* tamBuffer)
 void limpaBuffer(char *b, int bytes){
   memset(b, 0, bytes);
 }
+
+#ifdef STEP
+void aguardaEnter(){
+  printf("pressione Enter para continuar...");
+  while (getchar() != '\n');
+}
+#endif

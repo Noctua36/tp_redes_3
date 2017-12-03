@@ -78,6 +78,8 @@ void montaPacotePelaMensagem(pacote *p, char *b){
 void montaMensagemPeloPacote(char *b, pacote *p){
   unsigned short posicao = 0;
   int cargaUtil = tamMsg - sizeof(p->opcode) - sizeof(p->numBloco);
+  uint16_t numBloco;
+  
   // inicializa buffer
   memset(b, 0, tamMsg);
 
@@ -88,18 +90,17 @@ void montaMensagemPeloPacote(char *b, pacote *p){
       strcpy(b + posicao, p->nomeArquivo);
       break;
     case ACK:
-      p->numBloco = htons(p->numBloco);
-      memcpy(b + posicao, &p->numBloco, sizeof p->numBloco);
+      numBloco = htons(p->numBloco);
+      memcpy(b + posicao, &numBloco, sizeof numBloco);
       break;
     case DADOS:
-      p->numBloco = htons(p->numBloco);
-      memcpy(b + posicao, &p->numBloco, sizeof p->numBloco);
-      posicao += sizeof p->numBloco;
-      
+
+      numBloco = htons(p->numBloco);
+      memcpy(b + posicao, &numBloco, sizeof numBloco);
+      posicao += sizeof numBloco;
       memcpy(b + posicao, p->dados, cargaUtil);
       break;
     case ERRO:
-      p->codErro = p->codErro;
       memcpy(b + posicao, &p->codErro, sizeof p->codErro);
       posicao += sizeof p->codErro;
       strcpy(b + posicao, p->mensagemErro);
@@ -159,14 +160,17 @@ void imprimeBuffer(char *b){
   printf("\n");
 }
 
-void imprimePacote(pacote *p){
+void imprimePacote(pacote *p, int imprimeDados){
   // imprime estrutura
   printf("[PACOTE]:\n");
   printf("opcode: %d\n", p->opcode);
   printf("nomeArquivo: %s\n", p->nomeArquivo);
   printf("dados: ");
-  imprimeBuffer(p->dados);
-  printf("numBloco: %d\n", p->numBloco);
+  if(imprimeDados)
+    imprimeBuffer(p->dados);
+  else
+    printf("<ocultado>");
+  printf("\nnumBloco: %d\n", p->numBloco);
   printf("codErro: %d\n", p->codErro);
   printf("mensagemErro: %s\n", p->mensagemErro);
 }

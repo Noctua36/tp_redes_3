@@ -148,11 +148,8 @@ void estadoRecebeArq(int *operacao){
     montaPacotePelaMensagem(recebido, buf);
     
     #ifdef DEBUG
-      printf("BytesRecebidos: %d\n", bytesRecebidos);
-      printf("Buffer recebido:\n");
-      imprimeBuffer(buf);
       printf("Pacote recebido:\n");
-      imprimePacote(recebido);
+      imprimePacote(recebido, 1);
     #endif
 
   if (recebido->opcode == (uint8_t)DADOS) 
