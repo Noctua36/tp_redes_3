@@ -41,10 +41,11 @@ short int tamJanela;
 char host[TAM_HOST];
 int contaBytes = 0;
 //variaveis para o tempo
+
 struct timeval inicio_tempo, fim_tempo;
-double t_total;
-double t_t0;
-double t_tf;
+long t_total;
+long t_t0;
+long t_tf;
 
 int main(int argc, char* argv[]){
   printf("Cliente iniciado\n");
@@ -103,6 +104,9 @@ void estadoEnviaReq(int *operacao){
   #ifdef STEP
     aguardaEnter();
   #endif
+  
+  // inicia a contagem do tempo
+  t_t0 = getTime();
   //envia requisição ao servidor
   status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
 
@@ -123,7 +127,7 @@ void estadoRecebeArq(int *operacao){
     
     int bytesRecebidos = 0;
     bytesRecebidos = tp_recvfrom(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
-    // contaBytes += bytesRecebidos;
+    contaBytes += bytesRecebidos;
     montaPacotePelaMensagem(t->recebido, t->buf, bytesRecebidos);
     
     #ifdef DEBUG
@@ -150,6 +154,8 @@ void estadoRecebeArq(int *operacao){
   if (t->recebido->opcode == (uint8_t)FIM){
     fechaArquivo(t->arquivo);
     *operacao = OPERACAO_TERMINO_ARQ;
+    t_tf = getTime();
+    t_total = timeDiff(t_t0, t_tf);
     return;
   }
   // carrega erro na transação
@@ -203,6 +209,8 @@ void estadoTermino(int *operacao){
     printf("\n[FSM] TERMINO\n");
   #endif
   printf("Saindo...\n");
+  //imprime os parametros exigidos
+  printf("Buffer = \%d byte(s), \%10.2f kbps (\%u bytes em \%3.6f s)\n", tamMaxMsg, ((float)contaBytes/ (float)t_total), contaBytes, (float)t_total);
   exit(EXIT_SUCCESS);
 }
 
