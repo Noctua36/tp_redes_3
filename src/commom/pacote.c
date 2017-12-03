@@ -156,6 +156,22 @@ void carregaFim(pacote *p, char *b){
   strcpy(p->mensagemErro, b + sizeof p->opcode + sizeof p->codErro);
 }
 
+char* mensagemDeErroPeloCodigo(codigoErro codErro){
+  switch (codErro){
+    case COD_ERRO_ARQUIVO_NAO_EXISTE:
+      return MSG_ERRO_ARQUIVO_NAO_EXISTE;
+    break;
+    case COD_ERRO_VIOLACAO_ACESSO:
+      return MSG_ERRO_VIOLACAO_ACESSO;
+    break;
+    case COD_ERRO_OP_ILEGAL:
+      return MSG_ERRO_OP_ILEGAL;
+    break; 
+    default: 
+      return MSG_ERRO_DESCONHECIDO;
+  }
+}
+
 #ifdef DEBUG
 void imprimeBuffer(char *b){
   int cargaUtil = tamMaxMsg - sizeof(uint8_t) - sizeof(uint16_t);

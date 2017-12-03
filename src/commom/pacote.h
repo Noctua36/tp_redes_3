@@ -93,6 +93,8 @@ void carregaMensagemErro(pacote*, char*);
 void montaPacotePelaMensagem(pacote*, char*, int);
 int montaMensagemPeloPacote(char*, pacote*);
 
+char* mensagemDeErroPeloCodigo(codigoErro);
+
 #ifdef DEBUG
 void imprimeBuffer(char*);
 void imprimePacote(pacote*, int);

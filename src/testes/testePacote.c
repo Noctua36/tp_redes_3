@@ -20,24 +20,22 @@ int main(){
 
     char *nomeArquivo = "arquivo.txt";
     strcpy(p->nomeArquivo, nomeArquivo);
-    imprimePacote(p);
-    montaMensagemPeloPacote(b, p);
-    //imprimeBuffer(b);
+    imprimePacote(p, 0);
+    montaMensagemPeloPacote(b, p, 1022);
     limpaPacote(p2);
     montaPacotePelaMensagem(p2, b);
-    imprimePacote(p2);
+    imprimePacote(p2, 0);
 
     // teste pacote ACK
     printf("\nTeste ACK\n");
     limpaPacote(p);
     p->opcode = (uint8_t)ACK;
     p->numBloco = (uint16_t)12;
-    imprimePacote(p);
-    montaMensagemPeloPacote(b, p);
-    //imprimeBuffer(b);
+    imprimePacote(p, 0);
+    montaMensagemPeloPacote(b, p, 1022);
     limpaPacote(p2);
-    montaPacotePelaMensagem(p2, b);
-    imprimePacote(p2);
+    montaPacotePelaMensagem(p2, b,1021);
+    imprimePacote(p2, 0);
 
     // teste pacote DADOS
     printf("\nTeste DADOS\n");
@@ -48,12 +46,11 @@ int main(){
         p->dados[i] = 'a';
     }
     p->numBloco = (uint16_t)9;
-    imprimePacote(p);
-    montaMensagemPeloPacote(b, p);
-    //imprimeBuffer(b);
+    imprimePacote(p, 1);
+    montaMensagemPeloPacote(b, p, 1022);
     limpaPacote(p2);
     montaPacotePelaMensagem(p2, b);
-    imprimePacote(p2);
+    imprimePacote(p2, 1);
 
     // teste pacote ERRO
     printf("\nTeste ERRO\n");
@@ -62,12 +59,11 @@ int main(){
     p->codErro = (uint8_t)COD_ERRO_ARQUIVO_NAO_EXISTE;
     char *erro = MSG_ERRO_ARQUIVO_NAO_EXISTE;
     strcpy(p->mensagemErro, erro);
-    imprimePacote(p);
+    imprimePacote(p, 0);
     montaMensagemPeloPacote(b, p);
-    //imprimeBuffer(b);
     limpaPacote(p2);
     montaPacotePelaMensagem(p2, b);
-    imprimePacote(p2);
+    imprimePacote(p2, 0);
 
     return 0;
 }

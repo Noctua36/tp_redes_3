@@ -14,8 +14,8 @@
 #include "fsmServidor.h"
 
 #define DEBUG
-#define IMPRIME_DADOS_DO_PACOTE
-#define STEP
+//#define IMPRIME_DADOS_DO_PACOTE
+//#define STEP
 
 #ifdef STEP
 void aguardaEnter();
@@ -172,6 +172,23 @@ void estadoErro(int *operacao){
   #ifdef DEBUG
     printf("\n[FSM] ERRO\n");
   #endif
+  t->envio = criaPacoteVazio();
+  t->envio->opcode = (uint8_t)ERRO;
+  t->envio->codErro = (uint8_t)t->codErro;
+  strcpy(t->envio->mensagemErro, mensagemDeErroPeloCodigo((codigoErro)t->codErro));
+
+  montaMensagemPeloPacote(t->buf, t->envio);
+
+  #ifdef DEBUG
+    printf("[DEBUG] Pacote a ser enviado:\n");
+    imprimePacote(t->envio, 1);
+  #endif
+  #ifdef STEP
+    aguardaEnter();
+  #endif
+  // envia parte do arquivo
+  int tamMsg = sizeof t->envio->opcode + sizeof t->envio->codErro + TAM_MSG_ERRO;
+  int status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
 }
 
 void estadoTermino(int *operacao){

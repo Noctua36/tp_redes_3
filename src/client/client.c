@@ -13,8 +13,8 @@
 #include "../commom/transacao.h"
 
 #define DEBUG
-#define IMPRIME_DADOS_DO_PACOTE
-#define STEP
+//#define IMPRIME_DADOS_DO_PACOTE
+//#define STEP
 
 #ifdef STEP
 void aguardaEnter();
@@ -149,13 +149,21 @@ void estadoRecebeArq(int *operacao){
   if (t->recebido->opcode == (uint8_t)FIM){
     fechaArquivo(t->arquivo);
     *operacao = OPERACAO_TERMINO_ARQ;
+    return;
   }
+  // carrega erro na transação
+  t->codErro = t->recebido->codErro;
+  strcpy(t->mensagemErro, t->recebido->mensagemErro);
+  *operacao = OPERACAO_NOK;
 }
 
 void estadoErro(int *operacao){
   #ifdef DEBUG
     printf("\n[FSM] ERRO\n");
   #endif
+  //exibe mensagem de erro
+  printf("\n[ERRO]> codigo: %d\nmensagem: %s\n", t->codErro, t->mensagemErro);
+  destroiTransacao(t);
 }
 
 void estadoEnviaAck(int *operacao){
