@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include "tp_socket.h"
 #include "pacote.h"
+#include "lista_linkada.h"
 
 #define TIMEOUT 200 // em segundos
 
@@ -18,10 +19,12 @@ typedef struct transacao {
     char* buf;
     pacote *recebido;
     pacote *envio;
-    int timeoutCount;
+    int timedoutCount;
     int timedout;
     int numBlocoEsperado;
     int tamJanela;
+    int qtdNaJanela;
+    nodulo* janelaDeslizante;
     int arquivoAberto;
     char* nomeArquivo;
     FILE* arquivo;
