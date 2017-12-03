@@ -26,7 +26,14 @@ transacao* inicializaTransacao(int tamMaxMsg, int porta){
 
   // cria socket em porta aleatória e armazena o respectivo file descriptor
   t->socketFd = tp_socket(porta);
-  //TODO: veriricar erro no retorno do socket
+  
+  // verifica sucesso na criação do socket
+  if(t->socketFd < 0){
+    destroiTransacao(t);
+    perror("Falha ao iniciar socket.");
+    exit(EXIT_FAILURE);
+  }
+
   t->recebido = criaPacoteVazio();
 
   return t;

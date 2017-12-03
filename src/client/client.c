@@ -205,7 +205,8 @@ void inicializa(int *argc, char* argv[]){
   t = inicializaTransacao(tamMaxMsg, 0); // TODO: verificar se nao é porta inves de 0
 
   strcpy(t->nomeArquivo, nomeArquivo);
-
+  free(nomeArquivo);
+  
   // aloca memória para buffer
   t->buf = calloc(tamMaxMsg, sizeof t->buf);
   if (t->buf == NULL){
@@ -216,7 +217,7 @@ void inicializa(int *argc, char* argv[]){
   // chamada de função de inicialização para ambiente de testes
   tp_init();
  
-  free(nomeArquivo);
+  
 }
 
 // UTIL
