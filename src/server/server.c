@@ -262,6 +262,7 @@ void estadoTermino(int *operacao){
   }
   //TODO: tratar erro
   destroiPacote(t->envio);
+  exit(EXIT_SUCCESS); // TODO: resetar
 }
 
 int recebePacoteEsperado(uint8_t opCodeEsperado){

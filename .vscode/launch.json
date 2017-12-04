@@ -9,7 +9,7 @@
         "args": [
           "127.0.0.1",
           "2000",
-          "teste.txt",
+          "pi10M.txt",
           "256"
         ],
         "stopAtEntry": false,
