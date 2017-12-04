@@ -26,7 +26,7 @@ void aguardaEnter();
 
 // protótipo das funções
 void inicializa(int*, char**);
-void carregaParametros(int*, char**, short int*, int*);
+void carregaParametros(int*, char**, short int*, int*, short int*);
 int recebePacoteEsperado(uint8_t);
 void* recebeAcks();
 void deslizaJanela(uint16_t);
@@ -337,7 +337,7 @@ void adicionaNaJanela(pacote *p){
 
 void inicializa(int *argc, char* argv[]){
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
-  carregaParametros(argc, argv, &porta, &tamMaxMsg);
+  carregaParametros(argc, argv, &porta, &tamMaxMsg, &tamJanela);
   
   t = inicializaTransacao(tamMaxMsg, porta, tamJanela);
 
@@ -346,10 +346,10 @@ void inicializa(int *argc, char* argv[]){
  }
 
 // UTIL
-void carregaParametros(int* argc, char** argv, short int* porta, int* tamBuffer){
+void carregaParametros(int* argc, char** argv, short int* porta, int* tamBuffer, short int* tamJanela){
   char *ultimoCaractere;
   // verifica se programa foi chamado com argumentos corretos
-  if (*argc != 3){
+  if (*argc != 4){
     perror("ERRO-> parametros invalidos! Uso: %s [porta] [tam_buffer]\n");
     exit(EXIT_FAILURE);
   } 
@@ -361,9 +361,10 @@ void carregaParametros(int* argc, char** argv, short int* porta, int* tamBuffer)
       exit(EXIT_FAILURE);
     }
     *porta = atoi(argv[1]);
+    *tamJanela = atoi(argv[3]);
   }
   #ifdef DEBUG
-    printf("[DEBUG] Parametros recebidos-> porta: %d tamBuffer: %d\n", *porta, *tamBuffer);
+    printf("[DEBUG] Parametros recebidos-> porta: %d tamBuffer: %d tamJanela: %d\n", *porta, *tamBuffer, *tamJanela);
   #endif
 }
 
