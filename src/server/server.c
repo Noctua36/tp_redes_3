@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
+#include <pthread.h>
 #include "../commom/tp_socket.h"
 #include "../commom/arquivo.h"
 #include "../commom/pacote.h"
@@ -14,8 +15,10 @@
 #include "fsmServidor.h"
 
 #define DEBUG
-//#define IMPRIME_DADOS_DO_PACOTE
-//#define STEP
+// #define IMPRIME_DADOS_DO_PACOTE
+// #define STEP
+
+#define MAX_TIMEOUTS 10
 
 #ifdef STEP
 void aguardaEnter();
@@ -25,6 +28,9 @@ void aguardaEnter();
 void inicializa(int*, char**);
 void carregaParametros(int*, char**, short int*, int*);
 int recebePacoteEsperado(uint8_t);
+void* recebeAcks();
+void deslizaJanela(uint16_t);
+void adicionaNaJanela(pacote*);
 void limpaBuffer(char*, int);
 void estadoStandBy(int*);
 void estadoAguardaAck(int*);
@@ -34,10 +40,11 @@ void estadoErro(int*);
 void estadoTermino(int*);
 
 short int porta;
-short int tamJanela;
+short int tamJanela = 3; //  TODO: remover
 int tamMaxMsg;
 transacao *t;
-struct timeval timeout;      
+pthread_t threadRecebeAcks;
+pthread_mutex_t mutexJanelaDeslizante = PTHREAD_MUTEX_INITIALIZER;
 
 int main(int argc, char* argv[]){
   printf("Inicio\n");
@@ -55,9 +62,9 @@ int main(int argc, char* argv[]){
       case ESTADO_ENVIA:
         estadoEnvia(&operacao);
         break;
-      case ESTADO_AGUARDA_ACK:
-        estadoAguardaAck(&operacao);
-        break;
+      // case ESTADO_AGUARDA_ACK:
+      //   estadoAguardaAck(&operacao);
+      //   break;
       case ESTADO_ERRO:
         estadoErro(&operacao);
         break;
@@ -80,7 +87,8 @@ void estadoStandBy(int *operacao){
     printf("Aguardando solicitacao...\n");
   #endif
  
-  if ((opCode)recebePacoteEsperado((u_int8_t)REQ)){
+  if (recebePacoteEsperado((u_int8_t)REQ)){
+    strcpy(t->nomeArquivo, t->recebido->nomeArquivo);
     *operacao = OPERACAO_REQ_RECEBIDA;
   } 
   else {
@@ -96,74 +104,110 @@ void estadoStandBy(int *operacao){
 void estadoEnvia(int *operacao){
   #ifdef DEBUG
     printf("\n[FSM] ENVIA\n");
+    printf("qtd na janela: %d\n",t->qtdNaJanela);
   #endif
-
-  // verifica se arquivo já está aberto
-  if (!t->arquivoAberto){
-    t->arquivo = abreArquivoParaLeitura(t->recebido->nomeArquivo);
-    if (t->arquivo == NULL){
-      t->codErro = (uint8_t)COD_ERRO_ARQUIVO_NAO_EXISTE; // TODO: diferenciar erros de permissão de leitura e de existância de arquivo
-      *operacao = OPERACAO_NOK;
-      return;
+  int janelaLivre = 0;
+  pthread_mutex_lock(&mutexJanelaDeslizante);
+  janelaLivre = t->tamJanela - t->qtdNaJanela > 0;
+  pthread_mutex_unlock(&mutexJanelaDeslizante);
+  // verifica se janela ainda não está cheia
+  if (janelaLivre){
+    // certifica que thread para recebimento de acks já foi iniciada
+    if (!threadRecebeAcks){
+      int erroThread = pthread_create(&threadRecebeAcks, NULL, recebeAcks, NULL);
+      if(erroThread){
+          perror("Falha ao criar thread para recebimento de acks.");
+          exit(EXIT_FAILURE); //TODO: reseta?
+      }
     }
-    else
-      t->arquivoAberto = 1;
-  } 
 
-  // verifica se arquivo já chegou ao fim
-  if (feof(t->arquivo)){
-    *operacao = OPERACAO_TERMINO_ARQ;
+    // verifica se arquivo já está aberto
+    if (!t->arquivoAberto){
+      t->arquivo = abreArquivoParaLeitura(t->nomeArquivo);
+      if (t->arquivo == NULL){
+        t->codErro = (uint8_t)COD_ERRO_ARQUIVO_NAO_EXISTE; // TODO: diferenciar erros de permissão de leitura e de existância de arquivo
+        *operacao = OPERACAO_NOK;
+        return;
+      }
+      else
+        t->arquivoAberto = 1;
+    } 
+
+    // se arquivo chegou ao fim, não cria mais pacotes de envio, porém aguarda até que todos os ACKs tentam sido recebidos
+    if (feof(t->arquivo)){
+      if (t->janelaDeslizante == NULL){ // significa que todos os envios foram ACKed
+        *operacao = OPERACAO_TERMINO;
+      }
+      else {
+        *operacao = OPERACAO_OK;// mantém no estado
+      }
+    }
+    else {
+      t->envio = criaPacoteVazio();
+        
+      // cria pacote para envio
+      t->envio->opcode = (uint8_t)DADOS;
+      t->envio->numBloco = ++t->ultimoNumBloco;
+      int bytesArquivo = leBytesDeArquivo(t->envio->dados, t->arquivo, t->cargaUtilPacoteDados);
+      t->envio->cargaUtil = bytesArquivo;
+      montaMensagemPeloPacote(t->bufEnvio, t->envio);
+
+      #ifdef DEBUG
+        printf("[DEBUG] Pacote a ser enviado:\n");
+        imprimePacote(t->envio, 1);
+      #endif
+      #ifdef STEP
+        aguardaEnter();
+      #endif
+      // envia parte do arquivo
+      int tamMsg = t->envio->cargaUtil + sizeof t->envio->opcode + sizeof t->envio->numBloco;
+      adicionaNaJanela(t->envio);
+      int status = tp_sendto(t->socketFd, t->bufEnvio, tamMsg, &t->toAddr);
+      if (status > 0){
+        *operacao = OPERACAO_OK;
+      } 
+      else {
+        // destroiPacote(t->envio);
+        *operacao = OPERACAO_NOK;
+      }
+    }
+  }
+  if (t->timedoutCount >= MAX_TIMEOUTS){
+    printf("num timeouts %d", t->timedoutCount);
+    printf("Numero maximo de timeouts alcancado. Envio cancelado.\n");
+    *operacao = OPERACAO_ABANDONA;
     return;
   }
-  t->envio = criaPacoteVazio();
-    
-  // cria pacote para envio
-  t->envio->opcode = (uint8_t)DADOS;
-  t->envio->numBloco++;
-  int bytesArquivo = leBytesDeArquivo(t->envio->dados, t->arquivo, t->cargaUtilPacoteDados);
-  t->envio->cargaUtil = bytesArquivo;
-  montaMensagemPeloPacote(t->buf, t->envio);
-
-  #ifdef DEBUG
-    printf("[DEBUG] Pacote a ser enviado:\n");
-    imprimePacote(t->envio, 1);
-  #endif
-  #ifdef STEP
-    aguardaEnter();
-  #endif
-  // envia parte do arquivo
-  int tamMsg = t->envio->cargaUtil + sizeof t->envio->opcode + sizeof t->envio->numBloco;
-  int status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
-  if (status > 0){
-    *operacao = OPERACAO_OK;
-  } 
-  else {
-    *operacao = OPERACAO_NOK;
+  // verifica timeout
+  if (t->timedout){
+    printf("travei\n");
+    // reenvia todos da janela
+    nodulo *atual = t->janelaDeslizante;
+    while (atual != NULL){
+      montaMensagemPeloPacote(t->bufEnvio, atual->pack);
+      // envia parte do arquivo
+      int tamMsg = atual->pack->cargaUtil + sizeof atual->pack->opcode + sizeof atual->pack->numBloco;
+      #ifdef DEBUG
+        printf("[DEBUG] Pacote a ser enviado:\n");
+        imprimePacote(t->envio, 1);
+      #endif
+      #ifdef STEP
+        aguardaEnter();
+      #endif
+      /*int status = */tp_sendto(t->socketFd, t->bufEnvio, tamMsg, &t->toAddr);
+      atual = atual->proximo;
+    }
   }
-  destroiPacote(t->envio);
-}
-
-void estadoAguardaAck(int *operacao){
-  #ifdef DEBUG
-    printf("\n[FSM] AGUARDA_ACK\n");
-  #endif
-
-  // inicia temporizador de timeout
-  if (setsockopt (t->socketFd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0){
-    perror("falha ao definir timeout para socket.\n");
-    // apenas atualiza contador de timeout, mantém no estado de aguarda ACK
-    t->timeoutCount++;
-    //TODO: limitar quantidade de timeouts
-    return;
-  }
-  
-  *operacao = (opCode)recebePacoteEsperado((uint8_t)ACK);
 }
 
 void estadoReseta(int *operacao){
   #ifdef DEBUG
     printf("\n[FSM] RESETA\n");
   #endif
+
+  // finaliza thread de recebimento de acks
+  pthread_cancel(threadRecebeAcks);
+
   destroiTransacao(t);
   t = inicializaTransacao(tamMaxMsg, porta, tamJanela);
   *operacao = OPERACAO_OK;
@@ -178,7 +222,7 @@ void estadoErro(int *operacao){
   t->envio->codErro = (uint8_t)t->codErro;
   strcpy(t->envio->mensagemErro, mensagemDeErroPeloCodigo((codigoErro)t->codErro));
 
-  montaMensagemPeloPacote(t->buf, t->envio);
+  montaMensagemPeloPacote(t->bufEnvio, t->envio);
 
   #ifdef DEBUG
     printf("[DEBUG] Pacote a ser enviado:\n");
@@ -189,7 +233,13 @@ void estadoErro(int *operacao){
   #endif
   // envia parte do arquivo
   int tamMsg = sizeof t->envio->opcode + sizeof t->envio->codErro + TAM_MSG_ERRO;
-  int status = tp_sendto(t->socketFd, t->buf, tamMsg, &t->toAddr);
+  int status = tp_sendto(t->socketFd, t->bufEnvio, tamMsg, &t->toAddr);
+  if (status > 0){
+      *operacao = OPERACAO_OK;
+    } 
+    else {
+      *operacao = OPERACAO_NOK;
+    }
 }
 
 void estadoTermino(int *operacao){
@@ -198,7 +248,7 @@ void estadoTermino(int *operacao){
   #endif
   t->envio = criaPacoteVazio();
   t->envio->opcode = (uint8_t)FIM;
-  montaMensagemPeloPacote(t->buf, t->envio);
+  montaMensagemPeloPacote(t->bufEnvio, t->envio);
   #ifdef DEBUG
     printf("[DEBUG] Pacote a ser enviado:\n");
     imprimePacote(t->envio, 0);
@@ -206,7 +256,7 @@ void estadoTermino(int *operacao){
   #ifdef STEP
     aguardaEnter();
   #endif
-  int status = tp_sendto(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);
+  int status = tp_sendto(t->socketFd, t->bufEnvio, tamMaxMsg, &t->toAddr);
   if (status > 0){
     *operacao = OPERACAO_OK;
   }
@@ -215,15 +265,16 @@ void estadoTermino(int *operacao){
 }
 
 int recebePacoteEsperado(uint8_t opCodeEsperado){
-  limpaBuffer(t->buf, tamMaxMsg);
-  int bytesRecebidos = tp_recvfrom(t->socketFd, t->buf, tamMaxMsg, &t->toAddr);                     
+  limpaBuffer(t->bufRecebimento, tamMaxMsg);
+  int bytesRecebidos = tp_recvfrom(t->socketFd, t->bufRecebimento, tamMaxMsg, &t->toAddr);                     
   if (bytesRecebidos == -1){
-    perror("ERRO-> Falha no recebimento de mensagem.\n");
+    // timeout ou outro erro
+    //perror("ERRO-> Falha no recebimento de mensagem.\n");
     //TODO: avaliar se cria msg de erro na transacao
     return 0;
   }
 
-  montaPacotePelaMensagem(t->recebido, t->buf, bytesRecebidos);
+  montaPacotePelaMensagem(t->recebido, t->bufRecebimento, bytesRecebidos);
   #ifdef DEBUG
     printf("Recebido mensagem:\n");
     imprimePacote(t->recebido, 0);
@@ -232,7 +283,7 @@ int recebePacoteEsperado(uint8_t opCodeEsperado){
   if (opCodeEsperado == t->recebido->opcode){
     if (t->recebido->opcode == DADOS){
       //TODO: verificar se verifica CRC apenas para mensagens do tipo DADOS
-      int msgIntegra = validaMensagem(t->buf);
+      int msgIntegra = validaMensagem(t->bufRecebimento);
       if (!msgIntegra){
         #ifdef DEBUG
           printf("Mensagem corrompida recebida!\n");
@@ -247,14 +298,47 @@ int recebePacoteEsperado(uint8_t opCodeEsperado){
   return 0;
 }
 
+void* recebeAcks(){
+  int resultadoOk;
+  uint16_t numBloco;
+  while(1){
+    resultadoOk = recebePacoteEsperado((uint8_t)ACK);
+    if (resultadoOk){
+      numBloco = t->recebido->numBloco;
+      deslizaJanela(numBloco);
+      t->timedout = 0;
+      t->timedoutCount = 0;
+    }
+    else {
+      t->timedout = 1;
+      t->timedoutCount++;
+    }
+  }
+}
+
+void deslizaJanela(uint16_t numBloco){
+  pthread_mutex_lock(&mutexJanelaDeslizante);
+  while (t->janelaDeslizante != NULL && t->janelaDeslizante->pack != NULL && (numBloco > t->janelaDeslizante->pack->numBloco)){
+    // desliza janela até próximo envio não reconhecido
+    pacote* p = pop(&t->janelaDeslizante);
+    destroiPacote(p);
+    t->qtdNaJanela--;
+  }
+  pthread_mutex_unlock(&mutexJanelaDeslizante);
+}
+
+void adicionaNaJanela(pacote *p){  
+  pthread_mutex_lock(&mutexJanelaDeslizante);
+    push(&t->janelaDeslizante, p);
+    t->qtdNaJanela++;
+  pthread_mutex_unlock(&mutexJanelaDeslizante);
+}
+
 void inicializa(int *argc, char* argv[]){
   // alimenta número da porta e tamanho do buffer pelos parâmetros recebidos
   carregaParametros(argc, argv, &porta, &tamMaxMsg);
   
   t = inicializaTransacao(tamMaxMsg, porta, tamJanela);
-
-  timeout.tv_sec = TIMEOUT;
-  timeout.tv_usec = 0;
 
   // chamada de função de inicialização para ambiente de testes
   tp_init();

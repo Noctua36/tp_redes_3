@@ -9,6 +9,9 @@ void transita(int *estado, int *operacao){
         case OPERACAO_REQ_RECEBIDA:
           *estado = ESTADO_ENVIA;
           break;
+        case OPERACAO_TIMEOUT:
+          *estado = ESTADO_STANDBY;
+          break;
         case OPERACAO_ABANDONA:
           *estado = ESTADO_RESETA;
           break;
@@ -37,15 +40,16 @@ void transita(int *estado, int *operacao){
     case ESTADO_ENVIA:
       switch (*operacao){
         case OPERACAO_NOK:
-          *estado = ESTADO_ERRO;
+          *estado = ESTADO_ENVIA;
           break;
         case OPERACAO_ABANDONA:
           *estado = ESTADO_RESETA;
           break;
         case OPERACAO_OK:
-          *estado = ESTADO_AGUARDA_ACK;
+          //*estado = ESTADO_AGUARDA_ACK;
+          *estado = ESTADO_ENVIA;
           break;
-        case OPERACAO_TERMINO_ARQ:
+        case OPERACAO_TERMINO:
           *estado = ESTADO_TERMINO;
           break;
         default:
@@ -53,21 +57,21 @@ void transita(int *estado, int *operacao){
       }
     break;
 
-    case ESTADO_AGUARDA_ACK:
-      switch (*operacao){
-        case OPERACAO_OK:
-          *estado = ESTADO_ENVIA;
-          break;
-        case OPERACAO_NOK:
-          *estado = ESTADO_AGUARDA_ACK;
-          break;
-        case OPERACAO_ABANDONA:
-          *estado = ESTADO_RESETA;
-          break;
-        default:
-          *estado = ESTADO_ERRO;
-      }
-    break;
+    // case ESTADO_AGUARDA_ACK:
+    //   switch (*operacao){
+    //     case OPERACAO_OK:
+    //       *estado = ESTADO_ENVIA;
+    //       break;
+    //     case OPERACAO_NOK:
+    //       *estado = ESTADO_AGUARDA_ACK;
+    //       break;
+    //     case OPERACAO_ABANDONA:
+    //       *estado = ESTADO_RESETA;
+    //       break;
+    //     default:
+    //       *estado = ESTADO_ERRO;
+    //   }
+    // break;
 
     case ESTADO_TERMINO:
       switch (*operacao){
