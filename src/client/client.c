@@ -154,8 +154,6 @@ void estadoRecebeArq(int *operacao){
   if (t->recebido->opcode == (uint8_t)FIM){
     fechaArquivo(t->arquivo);
     *operacao = OPERACAO_TERMINO;
-    t_tf = getTime();
-    t_total = timeDiff(t_t0, t_tf);
     return;
   }
   // carrega erro na transação
@@ -208,9 +206,13 @@ void estadoTermino(int *operacao){
   #ifdef DEBUG  
     printf("\n[FSM] TERMINO\n");
   #endif
-  printf("Saindo...\n");
+  t_tf = getTime();
+  printf("inicio %ld, fim %ld\n",t_t0, t_tf);
+  t_total = (timeDiff(t_t0, t_tf)/* / 1000000000*/);
+  printf("inicio %ld, fim %ld\n",t_t0, t_tf);
   //imprime os parametros exigidos
-  printf("Buffer = \%d byte(s), \%10.2f kbps (\%u bytes em \%3.6f s)\n", tamMaxMsg, ((float)contaBytes/ (float)t_total), contaBytes, (float)t_total);
+  printf("Buffer = %d byte(s), %10.2f KBps (%u KBytes em %3.6f s)\n", tamMaxMsg, (float)(contaBytes / 1024) / ((float)t_total / 1000000000), contaBytes / 1024, (float)t_total / 1000000000);
+  printf("Saindo...\n");
   exit(EXIT_SUCCESS);
 }
 
