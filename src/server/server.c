@@ -15,8 +15,8 @@
 #include "fsmServidor.h"
 
 #define DEBUG
-#define IMPRIME_DADOS_DO_PACOTE
-#define STEP
+// #define IMPRIME_DADOS_DO_PACOTE
+// #define STEP
 
 #define MAX_TIMEOUTS 10
 

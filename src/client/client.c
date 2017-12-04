@@ -13,8 +13,8 @@
 #include "../commom/transacao.h"
 
 #define DEBUG
-#define IMPRIME_DADOS_DO_PACOTE
-#define STEP
+// #define IMPRIME_DADOS_DO_PACOTE
+// #define STEP
 
 #ifdef STEP
 void aguardaEnter();
