@@ -13,8 +13,8 @@
 #include "../commom/transacao.h"
 
 #define DEBUG
-// #define IMPRIME_DADOS_DO_PACOTE
-// #define STEP
+#define IMPRIME_DADOS_DO_PACOTE
+#define STEP
 
 #ifdef STEP
 void aguardaEnter();
@@ -149,7 +149,7 @@ void estadoRecebeArq(int *operacao){
   }
   if (t->recebido->opcode == (uint8_t)FIM){
     fechaArquivo(t->arquivo);
-    *operacao = OPERACAO_TERMINO_ARQ;
+    *operacao = OPERACAO_TERMINO;
     return;
   }
   // carrega erro na transação

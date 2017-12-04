@@ -10,7 +10,7 @@
 #include "pacote.h"
 #include "lista_linkada.h"
 
-#define TIMEOUT 200 // em segundos
+#define TIMEOUT 1000 // em segundos
 
 typedef struct transacao {
     int socketFd;
@@ -32,6 +32,7 @@ typedef struct transacao {
     int posicaoArquivo;
     int tamBufferArquivo;
     uint16_t numBloco;
+    uint16_t ultimoNumBloco;
     uint8_t codErro;
     char *mensagemErro;
 } transacao;

@@ -11,7 +11,7 @@
 // define operações
 #define OPERACAO_OK           1
 #define OPERACAO_NOK          2
-#define OPERACAO_TERMINO_ARQ  3
+#define OPERACAO_TERMINO  3
 #define OPERACAO_IGNORA       4
 
 void transita(int *estado, int *operacao);

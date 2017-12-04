@@ -19,6 +19,7 @@ transacao* inicializaTransacao(int tamMaxMsg, int porta, int tamJanela){
   t->posicaoArquivo = 0;
   t->tamBufferArquivo = 0;
   t->numBloco = (uint16_t)0;
+  t->ultimoNumBloco = (uint16_t)0;
   t->codErro = (uint8_t)SEM_ERRO;
 
   t->mensagemErro = calloc(TAM_MSG_ERRO, sizeof(t->mensagemErro));

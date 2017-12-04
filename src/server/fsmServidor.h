@@ -14,7 +14,7 @@
 #define OPERACAO_NOK          2
 #define OPERACAO_ABANDONA     3
 #define OPERACAO_REQ_RECEBIDA 4
-#define OPERACAO_TERMINO_ARQ  5
+#define OPERACAO_TERMINO  5
 #define OPERACAO_IGNORA       6
 #define OPERACAO_TIMEOUT      7
 
